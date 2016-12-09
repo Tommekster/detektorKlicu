@@ -26,13 +26,24 @@ package detektorklicu;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /** Hlavni okno
  * Hlavni okno programu Deterktor klicu
@@ -42,6 +53,7 @@ public class HlavniOkno extends JFrame{
     private static final Lokalizator l = Lokalizator.getLokalizator();
     private final MainMenu mainMenu = new MainMenu();
     private final KresliciPanel panelSObrazkem = new KresliciPanel();
+    private BufferedImage obrazek;
     
     public HlavniOkno(){
         super();
@@ -66,6 +78,37 @@ public class HlavniOkno extends JFrame{
                 System.exit(0);
             }
         });
+    }
+    
+    /** Otevri soubor 
+     * Umozni vybrat obrazek k detekci klicu
+     * @param e ActionEvent podrobnosti o události
+     */
+    private void otevriSoubor(ActionEvent e) {
+        final FileFilter filter = new FileNameExtensionFilter(l.tr("otevritSouborJPEGType"), "jpg", "jpeg");
+        JFileChooser fileChooser = new JFileChooser(".");
+        fileChooser.setDialogTitle(l.tr("otevritSouborTitle"));
+        fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+        fileChooser.addChoosableFileFilter(filter);
+        if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+            File vybranySoubor = new File(fileChooser.getCurrentDirectory()
+                    .getAbsolutePath(), fileChooser.getSelectedFile().getName());
+            try {
+                setObrazek(ImageIO.read(vybranySoubor));
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(fileChooser, 
+                        l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
+                        l.tr("otevritSouborChybaTitle"), 
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    /** setter pro obrazek
+     * @param obrazek obrazek k nastaveni
+     */
+    private void setObrazek(BufferedImage obrazek){
+        this.obrazek = obrazek;
     }
     
     /** Hlavni nabidka
@@ -95,8 +138,10 @@ public class HlavniOkno extends JFrame{
         public MainMenu(){
             okno = HlavniOkno.this;
             this.inicializace();
+            this.inicializujListenery();
         }
 
+        /** Propoji polozky menu s nabidkou a vlozi ji do okna */
         private void inicializace() {
             okno.setJMenuBar(hlavniNabidka);
             
@@ -106,12 +151,29 @@ public class HlavniOkno extends JFrame{
             
             souborMenu.add(souborOtevrit);
             souborMenu.add(souborUlozit);
+            souborUlozit.setEnabled(false);
             souborMenu.addSeparator();
             souborMenu.add(souborKonec);
             
             detekceMenu.add(detekceFloodFill);
             
             napovedaMenu.add(napovedaAbout);
+            
+            blokujDetekci();
+        }
+        
+        private void inicializujListenery(){
+            souborOtevrit.addActionListener(HlavniOkno.this::otevriSoubor);
+        }
+        
+        /** zablokuje nabidku detekce */
+        public void blokujDetekci(){
+            detekceMenu.setEnabled(false);
+        }
+        
+        /** odblokuje nabidku detekce */
+        public void povolDetekci(){
+            detekceMenu.setEnabled(true);
         }
     }
         
