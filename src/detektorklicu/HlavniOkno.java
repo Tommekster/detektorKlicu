@@ -23,6 +23,7 @@
  */
 package detektorklicu;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Toolkit;
@@ -105,11 +106,18 @@ public class HlavniOkno extends JFrame{
         }
     }
     
+    private void test(ActionEvent e){
+        //Color d = new Color
+        Color c = new Color(canvas.getImage().getRGB(10, 10));
+        System.out.println("["+c.getRed()+","+c.getGreen()+","+c.getBlue()+"]");
+    }
+    
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
     private void setObrazek(BufferedImage obrazek){
         canvas.setImage(obrazek);
+        mainMenu.enableDetection(canvas.isImageInside());
     }
     
     /** Hlavni nabidka
@@ -160,31 +168,37 @@ public class HlavniOkno extends JFrame{
             
             napovedaMenu.add(napovedaAbout);
             
-            blokujDetekci();
+            disableDetection();
         }
         
         private void inicializujListenery(){
             souborOtevrit.addActionListener(HlavniOkno.this::otevriSoubor);
+            detekceFloodFill.addActionListener(HlavniOkno.this::test);
         }
         
         /** zablokuje nabidku detekce */
-        public void blokujDetekci(){
+        public void disableDetection(){
             detekceMenu.setEnabled(false);
         }
-        
         /** odblokuje nabidku detekce */
-        public void povolDetekci(){
+        public void enableDetection(){
             detekceMenu.setEnabled(true);
+        }
+        /** enables or disables the detection menu */
+        public void enableDetection(boolean e){
+            if(e) enableDetection();
+            else disableDetection();
         }
     }
     
-    /** Kreslici panel
-     * nested class zajistujici spravne zobrazovani obrazku
+    /** Canvas panel
+     * nested class that cares about appropriate image painting
      */
     class Canvas extends JPanel{
         private BufferedImage image = null;
         public void setImage(BufferedImage i){image=i;}
         public BufferedImage getImage() {return image;}
+        public boolean isImageInside(){return image != null;}
         
         @Override
         public void paintComponent(Graphics g){
@@ -197,17 +211,15 @@ public class HlavniOkno extends JFrame{
                 int h = image.getHeight();
                 float ri = w/h;
                 
-                if(rs > ri) {
+                if(rs > ri) { // width is smaller
                     w = w*d.height/h;
                     h = d.height;
-                }else{
+                }else{ // height is smaller
                     h = h*d.width/w;
                     w = d.width;
                 }
                 int top = (d.height - h)/2;
                 int left = (d.width - w)/2;
-                
-                
                 // Draw image
                 g.drawImage(image, left, top, w, h, this);
             }
