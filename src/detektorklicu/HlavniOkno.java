@@ -52,8 +52,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class HlavniOkno extends JFrame{
     private static final Lokalizator l = Lokalizator.getLokalizator();
     private final MainMenu mainMenu = new MainMenu();
-    private final KresliciPanel panelSObrazkem = new KresliciPanel();
-    private BufferedImage obrazek;
+    private final Canvas canvas = new Canvas();
+    
     
     public HlavniOkno(){
         super();
@@ -70,7 +70,7 @@ public class HlavniOkno extends JFrame{
         Dimension obrazovka = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((obrazovka.width - sirka)/2, (obrazovka.height - vyska)/2, sirka, vyska);
         setTitle(l.tr("mainWindowTitle"));
-        add(panelSObrazkem);
+        add(canvas);
         
         addWindowListener(new WindowAdapter() {
             @Override
@@ -95,6 +95,7 @@ public class HlavniOkno extends JFrame{
                     .getAbsolutePath(), fileChooser.getSelectedFile().getName());
             try {
                 setObrazek(ImageIO.read(vybranySoubor));
+                repaint();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(fileChooser, 
                         l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
@@ -104,11 +105,11 @@ public class HlavniOkno extends JFrame{
         }
     }
     
-    /** setter pro obrazek
-     * @param obrazek obrazek k nastaveni
+    /** setter pro obrazek do kresliciho panelu
+     * @param obrazek obrazek k nakresleni
      */
     private void setObrazek(BufferedImage obrazek){
-        this.obrazek = obrazek;
+        canvas.setImage(obrazek);
     }
     
     /** Hlavni nabidka
@@ -176,12 +177,40 @@ public class HlavniOkno extends JFrame{
             detekceMenu.setEnabled(true);
         }
     }
+    
+    /** Kreslici panel
+     * nested class zajistujici spravne zobrazovani obrazku
+     */
+    class Canvas extends JPanel{
+        private BufferedImage image = null;
+        public void setImage(BufferedImage i){image=i;}
+        public BufferedImage getImage() {return image;}
         
-    class KresliciPanel extends JPanel{
         @Override
         public void paintComponent(Graphics g){
             super.paintComponent(g);
-
+            if(image != null){
+                // fit image in the box
+                Dimension d = this.getSize();
+                float rs = d.width/d.height;
+                int w = image.getWidth();
+                int h = image.getHeight();
+                float ri = w/h;
+                
+                if(rs > ri) {
+                    w = w*d.height/h;
+                    h = d.height;
+                }else{
+                    h = h*d.width/w;
+                    w = d.width;
+                }
+                int top = (d.height - h)/2;
+                int left = (d.width - w)/2;
+                
+                
+                // Draw image
+                g.drawImage(image, left, top, w, h, this);
+            }
         }
     }
 }
