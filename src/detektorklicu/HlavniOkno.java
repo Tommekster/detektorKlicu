@@ -108,8 +108,10 @@ public class HlavniOkno extends JFrame{
     
     private void test(ActionEvent e){
         //Color d = new Color
-        Color c = new Color(canvas.getImage().getRGB(10, 10));
-        System.out.println("["+c.getRed()+","+c.getGreen()+","+c.getBlue()+"]");
+//        Color c = new Color(canvas.getImage().getRGB(10, 10));
+//        System.out.println("["+c.getRed()+","+c.getGreen()+","+c.getBlue()+"]");
+        ImageProcessing.floodFill(canvas.getImage(), 10, 10, Color.yellow);
+        repaint();
     }
     
     /** setter pro obrazek do kresliciho panelu
