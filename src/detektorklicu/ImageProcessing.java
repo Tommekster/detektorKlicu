@@ -34,6 +34,7 @@ import java.util.Stack;
 import java.util.stream.IntStream;
 import static java.lang.Math.abs;
 import java.time.Clock;
+import java.util.Queue;
 import javax.swing.JFrame;
 
 /** ImageProcessing
@@ -64,8 +65,9 @@ public class ImageProcessing {
      * @return 
      */
     public static void floodFill(BufferedImage image, int xi, int yi, Color color){
-        Deque<Point> stack = new ArrayDeque<>();
-        stack.clear();
+        //Deque<Point> stack = new ArrayDeque<>();
+        Queue<Point> queue = new ArrayDeque<>();
+        queue.clear();
         
         int x = xi;
         int y = yi;
@@ -74,11 +76,11 @@ public class ImageProcessing {
         int w = image.getWidth();
         int h = image.getHeight();
         
-        stack.push(new Point(x, y));
+        queue.add(new Point(x, y));
         
-        while(!stack.isEmpty()){
+        while(!queue.isEmpty()){
             // starts \w point at top of the stack
-            Point p = stack.pop();
+            Point p = queue.poll();
             x = p.x;
             y = p.y;
             //System.out.println(x+","+y);
@@ -86,10 +88,10 @@ public class ImageProcessing {
             oRGB = image.getRGB(x,y);
             
             image.setRGB(x, y, nRGB);
-            if(y>0 && testBarvy(image.getRGB(x, y-1), oRGB)) stack.push(new Point(x, y-1));
-            if(x<(w-1) && testBarvy(image.getRGB(x+1, y), oRGB)) stack.push(new Point(x+1, y));
-            if(y<(h-1) && testBarvy(image.getRGB(x, y+1), oRGB)) stack.push(new Point(x, y+1));
-            if(x>0 && testBarvy(image.getRGB(x-1, y), oRGB)) stack.push(new Point(x-1, y));
+            if(y>0 && testBarvy(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
+            if(x<(w-1) && testBarvy(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
+            if(y<(h-1) && testBarvy(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
+            if(x>0 && testBarvy(image.getRGB(x-1, y), oRGB)) queue.add(new Point(x-1, y));
         }
     }
     
