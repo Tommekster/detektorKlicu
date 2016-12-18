@@ -185,4 +185,49 @@ public class ImageProcessing {
         
         return colorI;
     }
+    
+    /** erode 
+     * should find borders of components
+     */
+    public static void erode(BufferedImage image, Color outside, Color border){
+        int w = image.getWidth();
+        int h = image.getHeight();
+        int out = outside.getRGB();
+        int brd = border.getRGB();
+     
+        // at first I will erode in columns
+        IntStream.iterate(0, n->n+1)
+                .limit(w)
+                .parallel()
+                .forEach(x->{
+                    boolean isout = image.getRGB(x, 0) == out;
+                    for(int y = 1; y < h; y++){
+                        if(isout && image.getRGB(x, y) != out){
+                            image.setRGB(x, y, brd);
+                            isout = false;
+                        }else if(!isout && image.getRGB(x, y)== out){
+                            image.setRGB(x, y-1, brd);
+                            isout = true;
+                        }
+                    }
+                });
+        
+        // then it erodes in row
+        // if I take care about border points or dont, result will be same.
+        IntStream.iterate(0, n->n+1)
+                .limit(h)
+                .parallel()
+                .forEach(y->{
+                    boolean isout = image.getRGB(0, y) == out;
+                    for(int x = 1; x < w; x++){
+                        if(isout && image.getRGB(x, y) != out){
+                            image.setRGB(x, y, brd);
+                            isout = false;
+                        }else if(!isout && image.getRGB(x, y)== out){
+                            image.setRGB(x-1, y, brd);
+                            isout = true;
+                        }
+                    }
+                });
+    }
 }
