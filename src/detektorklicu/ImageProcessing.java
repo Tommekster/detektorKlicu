@@ -26,30 +26,35 @@ package detektorklicu;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.ColorConvertOp;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Stack;
 import java.util.stream.IntStream;
 import static java.lang.Math.abs;
+import java.time.Clock;
+import javax.swing.JFrame;
 
 /** ImageProcessing
  * class containing image processing functions
  * @author zikmuto2
  */
 public class ImageProcessing {
+    static int d;
     /** test barvy
      * bude vhodne odstranit
      * @return 
      */
     private static boolean testBarvy(int rgb1, int rgb2){
         Color c = new Color(rgb1);
-        Color č = new Color(rgb1);
+        Color č = new Color(rgb2);
         
-        int d = abs(c.getRed()-č.getRed()) 
+        /*int*/ d = abs(c.getRed()-č.getRed()) 
                 + abs(c.getGreen()-č.getGreen()) 
                 + abs(c.getBlue()-č.getBlue());
         
-        return d < 20;
+        return d < 10;
     }
     /** FloodFill 
      * @param image image to fill
@@ -58,8 +63,44 @@ public class ImageProcessing {
      * @param color the color of the flood
      * @return 
      */
-    public static BufferedImage floodFill(BufferedImage image, int xi, int yi, Color color){
-        int treshold= 200; // TODO napravit a změřit
+    public static void floodFill(BufferedImage image, int xi, int yi, Color color){
+        Deque<Point> stack = new ArrayDeque<>();
+        stack.clear();
+        
+        int x = xi;
+        int y = yi;
+        int nRGB = color.getRGB();
+        int oRGB = image.getRGB(x,y);
+        int w = image.getWidth();
+        int h = image.getHeight();
+        
+        stack.push(new Point(x, y));
+        
+        while(!stack.isEmpty()){
+            // starts \w point at top of the stack
+            Point p = stack.pop();
+            x = p.x;
+            y = p.y;
+            //System.out.println(x+","+y);
+            if(image.getRGB(x, y) == nRGB) continue;
+            oRGB = image.getRGB(x,y);
+            
+            image.setRGB(x, y, nRGB);
+            if(y>0 && testBarvy(image.getRGB(x, y-1), oRGB)) stack.push(new Point(x, y-1));
+            if(x<(w-1) && testBarvy(image.getRGB(x+1, y), oRGB)) stack.push(new Point(x+1, y));
+            if(y<(h-1) && testBarvy(image.getRGB(x, y+1), oRGB)) stack.push(new Point(x, y+1));
+            if(x>0 && testBarvy(image.getRGB(x-1, y), oRGB)) stack.push(new Point(x-1, y));
+        }
+    }
+    
+    /** scanline flood fill 
+     * @param image image to fill
+     * @param xi x-coordinate where flood starts
+     * @param yi y-coordinate where flood starts
+     * @param color the color of the flood
+     * @return 
+     */
+    public static void scanlineFill(BufferedImage image, int xi, int yi, Color color){
         Deque<Point> stack = new ArrayDeque<>();
         /* Napoveda: http://lodev.org/cgtutor/floodfill.html */
         stack.clear();
@@ -79,11 +120,14 @@ public class ImageProcessing {
             Point p = stack.pop();
             x = p.x;
             y = p.y;
+            System.out.println(x+","+y);
+            if(image.getRGB(x, y) == nRGB) continue;
             // the colors of the points in the stack are appropriate
             oRGB = image.getRGB(x,y);
             // at first reverse to posible begin
             while(x >= 0 && testBarvy(image.getRGB(x, y),oRGB)) {
                 oRGB = image.getRGB(x,y);
+                //System.out.println(--x+","+y);
                 x--;
             }
             x++; // correct to do-while
@@ -94,6 +138,7 @@ public class ImageProcessing {
                 oRGB = image.getRGB(x,y);
                 // set up the new color
                 image.setRGB(x, y, nRGB);
+                //o.repaint();
                 // smell point above
                 if(!spanAbove && y>0 &&  testBarvy(image.getRGB(x,y-1),oRGB)){
                     stack.push(new Point(x,y-1));
@@ -128,7 +173,16 @@ public class ImageProcessing {
                 .limit(image.getHeight());
         // stream.parallel();
         stream.forEach(n->ImageProcessing.scanlineFill(image,n));*/
-        return image;
     }
-    private static void scanlineFill(BufferedImage image, int y){}
+    
+    public static BufferedImage gray2RGB(BufferedImage grayI){
+        BufferedImage colorI = new BufferedImage(grayI.getWidth(), 
+                grayI.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
+        BufferedImageOp op = new ColorConvertOp(
+                grayI.getColorModel().getColorSpace(),
+                colorI.getColorModel().getColorSpace(),null);
+        op.filter(grayI, colorI);
+        
+        return colorI;
+    }
 }

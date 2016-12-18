@@ -106,11 +106,25 @@ public class HlavniOkno extends JFrame{
         }
     }
     
+    private void detekceDobarvi(ActionEvent e){
+        canvas.setImage(ImageProcessing.gray2RGB(canvas.getImage()));
+        repaint();
+    }
     private void test(ActionEvent e){
         //Color d = new Color
 //        Color c = new Color(canvas.getImage().getRGB(10, 10));
 //        System.out.println("["+c.getRed()+","+c.getGreen()+","+c.getBlue()+"]");
-        ImageProcessing.floodFill(canvas.getImage(), 10, 10, Color.yellow);
+        //ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red, this);
+        ImageProcessing.floodFill(canvas.getImage(), 10, 10, Color.red);
+        repaint();
+    }
+    
+    private void test2(ActionEvent e){
+        //Color d = new Color
+//        Color c = new Color(canvas.getImage().getRGB(10, 10));
+//        System.out.println("["+c.getRed()+","+c.getGreen()+","+c.getBlue()+"]");
+        //ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red, this);
+        ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
         repaint();
     }
     
@@ -137,7 +151,9 @@ public class HlavniOkno extends JFrame{
         private final JMenuItem souborKonec = new JMenuItem(l.tr("souborKonec"));
         
         private final JMenu detekceMenu = new JMenu(l.tr("detekceMenu"));
+        private final JMenuItem detekceDobarvi = new JMenuItem(l.tr("detekceDobarvi"));
         private final JMenuItem detekceFloodFill = new JMenuItem(l.tr("detekceFloodFill"));
+        private final JMenuItem detekceScanLine = new JMenuItem(l.tr("detekceScanLine"));
         
         private final JMenu napovedaMenu = new JMenu(l.tr("napovedaMenu"));
         private final JMenuItem napovedaAbout = new JMenuItem(l.tr("napovedaAbout"));
@@ -166,7 +182,9 @@ public class HlavniOkno extends JFrame{
             souborMenu.addSeparator();
             souborMenu.add(souborKonec);
             
+            detekceMenu.add(detekceDobarvi);
             detekceMenu.add(detekceFloodFill);
+            detekceMenu.add(detekceScanLine);
             
             napovedaMenu.add(napovedaAbout);
             
@@ -175,7 +193,9 @@ public class HlavniOkno extends JFrame{
         
         private void inicializujListenery(){
             souborOtevrit.addActionListener(HlavniOkno.this::otevriSoubor);
+            detekceDobarvi.addActionListener(HlavniOkno.this::detekceDobarvi);
             detekceFloodFill.addActionListener(HlavniOkno.this::test);
+            detekceScanLine.addActionListener(HlavniOkno.this::test2);
         }
         
         /** zablokuje nabidku detekce */

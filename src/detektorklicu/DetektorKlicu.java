@@ -23,6 +23,10 @@
  */
 package detektorklicu;
 
+import java.awt.Point;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 /** Hlavní třída programu Detektor klíčů
  * 
  * @author zikmuto2
