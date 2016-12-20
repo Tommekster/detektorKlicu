@@ -29,6 +29,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -46,6 +48,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -58,7 +61,7 @@ public class HlavniOkno extends JFrame{
     private final MainMenu mainMenu = new MainMenu();
     private final JTabbedPane tabsPane = new JTabbedPane();
     
-    private final Canvas canvas = new Canvas();
+    private Canvas canvas = null; //new Canvas();
     
     
     public HlavniOkno(){
@@ -77,7 +80,15 @@ public class HlavniOkno extends JFrame{
         setBounds((obrazovka.width - sirka)/2, (obrazovka.height - vyska)/2, sirka, vyska);
         setTitle(l.tr("mainWindowTitle"));
         add(tabsPane);
-        tabsPane.addTab(l.tr("sourceImage"), canvas);
+        
+        tabsPane.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e){
+                tabsMouse(e);
+            }
+        });
+        //tabsPane.addTab(l.tr("sourceImage"), canvas);
+        tabsPane.addChangeListener(this::tabsChange);
         
         addWindowListener(new WindowAdapter() {
             @Override
@@ -87,6 +98,27 @@ public class HlavniOkno extends JFrame{
         });
     }
     
+    private void tabsChange(ChangeEvent e){
+        if(e.getSource() != tabsPane) return;
+        if(tabsPane.getTabCount() > 0){
+            if(tabsPane.getSelectedComponent() instanceof Canvas)
+            canvas = (Canvas)tabsPane.getSelectedComponent();
+        }else{
+            canvas = null;
+            mainMenu.disableDetection();
+        }
+    }
+    /**
+     * 
+     * @param e MouseEvent further info about layer
+     */
+    private void tabsMouse(MouseEvent e){
+        if(e.getButton() == MouseEvent.BUTTON3 && e.getClickCount() > 2 
+                && e.getComponent() instanceof JTabbedPane){
+            System.out.println("close tab");
+            tabsPane.remove(tabsPane.getSelectedIndex());
+        }
+    }
     /** Otevri soubor 
      * Umozni vybrat obrazek k detekci klicu
      * @param e ActionEvent podrobnosti o události
@@ -101,8 +133,8 @@ public class HlavniOkno extends JFrame{
             File vybranySoubor = new File(fileChooser.getCurrentDirectory()
                     .getAbsolutePath(), fileChooser.getSelectedFile().getName());
             try {
-                setObrazek(ImageIO.read(vybranySoubor));
-                repaint();
+                addObrazek(ImageIO.read(vybranySoubor));
+                //repaint();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(fileChooser, 
                         l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
@@ -142,8 +174,10 @@ public class HlavniOkno extends JFrame{
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
-    private void setObrazek(BufferedImage obrazek){
-        canvas.setImage(obrazek);
+    private void addObrazek(BufferedImage obrazek){
+        //canvas.setImage(obrazek);
+        tabsPane.addTab(l.tr("sourceImage"), new Canvas(obrazek));
+        canvas = (Canvas)tabsPane.getSelectedComponent();
         mainMenu.enableDetection(canvas.isImageInside());
     }
     
@@ -227,50 +261,6 @@ public class HlavniOkno extends JFrame{
         public void enableDetection(boolean e){
             if(e) enableDetection();
             else disableDetection();
-        }
-    }
-    
-    /** Canvas panel
-     * nested class that cares about appropriate image painting
-     */
-    class Canvas extends JPanel{
-        private BufferedImage image = null;
-        public void setImage(BufferedImage i){image=i;}
-        public BufferedImage getImage() {return image;}
-        public boolean isImageInside(){return image != null;}
-        
-        public Canvas(){
-            super();
-        }
-        
-        public Canvas(BufferedImage image){
-            super();
-            setImage(image);
-        }
-        
-        @Override
-        public void paintComponent(Graphics g){
-            super.paintComponent(g);
-            if(image != null){
-                // fit image in the box
-                Dimension d = this.getSize();
-                float rs = d.width/d.height;
-                int w = image.getWidth();
-                int h = image.getHeight();
-                float ri = w/h;
-                
-                if(rs > ri) { // width is smaller
-                    w = w*d.height/h;
-                    h = d.height;
-                }else{ // height is smaller
-                    h = h*d.width/w;
-                    w = d.width;
-                }
-                int top = (d.height - h)/2;
-                int left = (d.width - w)/2;
-                // Draw image
-                g.drawImage(image, left, top, w, h, this);
-            }
         }
     }
 }

@@ -316,11 +316,12 @@ public class ImageProcessing {
             
             //System.out.println(w+"x"+h);
             BufferedImage component = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-            Graphics g = component.getGraphics();
+            /*Graphics g = component.getGraphics();
             g.setColor(Color.white);
             g.fillRect(0, 0, component.getWidth(), component.getHeight());
             g.setColor(Color.black);
             g.drawString("xmin="+xmin+", xmax="+xmax+", ymin="+ymin+", ymax="+ymax, 10, 10);
+            */
             redrawPoints(component, points, xmin-1, ymin-1);
             
             return component;
@@ -337,7 +338,7 @@ public class ImageProcessing {
             // redraw points
             Graphics g = component.getGraphics();
             g.setColor(Color.white);
-            //g.fillRect(0, 0, component.getWidth(), component.getHeight());
+            g.fillRect(0, 0, component.getWidth(), component.getHeight());
             points/*.stream()*/.forEach(p->{
                 //System.out.println((p.x-xOffset)+","+(p.y-yOffset));
                 component.setRGB(p.x-xOffset, p.y-yOffset, mark);
@@ -360,18 +361,20 @@ public class ImageProcessing {
             int x,y, xmin,xmax, ymin,ymax;
             x = xmin = xmax = xi;
             y = ymin = ymax = yi;
-            Queue<Point> queue = new ArrayDeque<>();
+            Deque<Point> queue = new ArrayDeque<>();
             queue.clear();
 
-            queue.add(new Point(x, y));
+            queue.push(new Point(x, y));
 
             while(!queue.isEmpty()){
-                Point p = queue.poll();
+                Point p = queue.pop();
                 x = p.x;
                 y = p.y;
                 
                 //if(image.getRGB(x, y) == mark) continue; // uz je oznacen
                 if(image.getRGB(x, y) != border) continue; // takovy bod me (uz) nezajima
+                
+                System.out.println(x+","+y);
                 
                 // bod oznacima a ulozime
                 image.setRGB(x, y, mark);
@@ -384,21 +387,21 @@ public class ImageProcessing {
                 else if(ymax < y) ymax = y;
                 
                 if(y>0 && image.getRGB(x, y-1) == border) 
-                    queue.add(new Point(x, y-1));
+                    queue.push(new Point(x, y-1));
                 if(x<(width-1) && image.getRGB(x+1, y) == border) 
-                    queue.add(new Point(x+1, y));
+                    queue.push(new Point(x+1, y));
                 if(y<(height-1) && image.getRGB(x, y+1) == border) 
-                    queue.add(new Point(x, y+1));
+                    queue.push(new Point(x, y+1));
                 if(x>0 && image.getRGB(x-1, y) == border) 
-                    queue.add(new Point(x-1, y));
+                    queue.push(new Point(x-1, y));
                 if(y>0 && x<(width-1) && image.getRGB(x+1, y-1) == border) 
-                    queue.add(new Point(x+1, y-1));
+                    queue.push(new Point(x+1, y-1));
                 if(y<(height-1) && x<(width-1) && image.getRGB(x+1, y+1) == border) 
-                    queue.add(new Point(x+1, y+1));
+                    queue.push(new Point(x+1, y+1));
                 if(y<(height-1) && x>0 && image.getRGB(x-1, y+1) == border) 
-                    queue.add(new Point(x-1, y+1));
+                    queue.push(new Point(x-1, y+1));
                 if(y>0 && x>0 && image.getRGB(x-1, y-1) == border) 
-                    queue.add(new Point(x-1, y-1));
+                    queue.push(new Point(x-1, y-1));
             }
             
             int [] bounds = {xmin,xmax,ymin,ymax};
