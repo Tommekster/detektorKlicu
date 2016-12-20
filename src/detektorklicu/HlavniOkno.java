@@ -23,6 +23,7 @@
  */
 package detektorklicu;
 
+import com.sun.beans.util.Cache;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -33,6 +34,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -43,6 +45,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -53,6 +56,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class HlavniOkno extends JFrame{
     private static final Lokalizator l = Lokalizator.getLokalizator();
     private final MainMenu mainMenu = new MainMenu();
+    private final JTabbedPane tabsPane = new JTabbedPane();
+    
     private final Canvas canvas = new Canvas();
     
     
@@ -71,7 +76,8 @@ public class HlavniOkno extends JFrame{
         Dimension obrazovka = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((obrazovka.width - sirka)/2, (obrazovka.height - vyska)/2, sirka, vyska);
         setTitle(l.tr("mainWindowTitle"));
-        add(canvas);
+        add(tabsPane);
+        tabsPane.addTab(l.tr("sourceImage"), canvas);
         
         addWindowListener(new WindowAdapter() {
             @Override
@@ -121,7 +127,15 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionErode(ActionEvent e){
-        ImageProcessing.erode(canvas.getImage(), Color.red, Color.BLUE);
+        ImageProcessing.erode(canvas.getImage(), Color.red, Color.GREEN);
+        repaint();
+    }
+    
+    private void detectionComponents(ActionEvent e){
+        List<BufferedImage> comps = ImageProcessing.SeparatableImage
+                .separateComponents(canvas.getImage(), Color.GREEN, Color.BLUE);
+        comps.stream()
+                .forEach(c->tabsPane.addTab(l.tr("componentImage"), new Canvas(c)));
         repaint();
     }
     
@@ -152,6 +166,7 @@ public class HlavniOkno extends JFrame{
         private final JMenuItem detekceFloodFill = new JMenuItem(l.tr("detekceFloodFill"));
         private final JMenuItem detekceScanLine = new JMenuItem(l.tr("detekceScanLine"));
         private final JMenuItem detekceErode = new JMenuItem(l.tr("detekceErode"));
+        private final JMenuItem detekceComponent = new JMenuItem(l.tr("detekceComponent"));
         
         private final JMenu napovedaMenu = new JMenu(l.tr("napovedaMenu"));
         private final JMenuItem napovedaAbout = new JMenuItem(l.tr("napovedaAbout"));
@@ -184,6 +199,7 @@ public class HlavniOkno extends JFrame{
             detekceMenu.add(detekceFloodFill);
             detekceMenu.add(detekceScanLine);
             detekceMenu.add(detekceErode);
+            detekceMenu.add(detekceComponent);
             
             napovedaMenu.add(napovedaAbout);
             
@@ -196,6 +212,7 @@ public class HlavniOkno extends JFrame{
             detekceFloodFill.addActionListener(HlavniOkno.this::detekcitonFloodFill4P);
             detekceScanLine.addActionListener(HlavniOkno.this::detectionScanline);
             detekceErode.addActionListener(HlavniOkno.this::detectionErode);
+            detekceComponent.addActionListener(HlavniOkno.this::detectionComponents);
         }
         
         /** zablokuje nabidku detekce */
@@ -221,6 +238,15 @@ public class HlavniOkno extends JFrame{
         public void setImage(BufferedImage i){image=i;}
         public BufferedImage getImage() {return image;}
         public boolean isImageInside(){return image != null;}
+        
+        public Canvas(){
+            super();
+        }
+        
+        public Canvas(BufferedImage image){
+            super();
+            setImage(image);
+        }
         
         @Override
         public void paintComponent(Graphics g){

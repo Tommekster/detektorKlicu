@@ -24,6 +24,7 @@
 package detektorklicu;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -34,7 +35,10 @@ import java.util.Stack;
 import java.util.stream.IntStream;
 import static java.lang.Math.abs;
 import java.time.Clock;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import javafx.geometry.Bounds;
 import javax.swing.JFrame;
 
 /** ImageProcessing
@@ -231,5 +235,176 @@ public class ImageProcessing {
                         }
                     }
                 });
+    }
+    
+    /**
+     * contains methods for separating components in image
+     * The components must be denoted in advance.
+     */
+    public static class SeparatableImage{
+        private BufferedImage image;
+        private int border, mark;
+        private int height, width;
+        
+        /**
+         * crates an instance of SeparatableImage
+         * and sets an image and basic parameters
+         * @param src an image with components denoted by border
+         * @param border color of border
+         * @param mark color suitable for marking detected border
+         */
+        public SeparatableImage(BufferedImage src, Color border, Color mark){
+            image = src;
+            height = image.getHeight();
+            width = image.getWidth();
+            
+            this.border = border.getRGB();
+            this.mark = mark.getRGB();
+        }
+        
+        /** separateComponents
+         * separates components in image
+         * @return list of images containing components
+         */
+        public static List<BufferedImage> separateComponents(BufferedImage src, Color border, Color mark){
+            SeparatableImage separatable = new SeparatableImage(src, border, mark);
+            return separatable.separateComponents();
+        }
+        
+        /** separateComponents
+         * separates components in image
+         * @return list of images containing components
+         */
+        public List<BufferedImage> separateComponents(){
+            List<BufferedImage> components = new LinkedList<>();
+
+            IntStream.iterate(0, n->n+1)
+                    .limit(height)
+                    .forEach(y->{
+                        for(int x = 0; x < width; x++){
+                            if(image.getRGB(x, y) == border){
+                                BufferedImage comp = separateComp(x, y);
+                                if(comp != null) components.add(comp);
+                            }
+                        }
+                    });
+            
+            return components;
+        }
+        
+        /** separates a component
+         * separates a component by finding a border
+        * @param xi x coordinate of start point
+        * @param yi y coordinate of start point
+        * @return image of a component
+        */
+        private BufferedImage separateComp(int xi, int yi){
+            List<Point> points = new LinkedList<>();
+            int [] bounds = findBorderPath(xi, yi, points);
+            int xmin = bounds[0];
+            int xmax = bounds[1];
+            int ymin = bounds[2];
+            int ymax = bounds[3];
+            
+            int h = (ymax-ymin)+3;
+            int w = (xmax-xmin)+3;
+            
+            if(w < 5 || h < 5) return null;
+            
+            //w=width;
+            //h=height;
+            
+            //System.out.println(w+"x"+h);
+            BufferedImage component = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            Graphics g = component.getGraphics();
+            g.setColor(Color.white);
+            g.fillRect(0, 0, component.getWidth(), component.getHeight());
+            g.setColor(Color.black);
+            g.drawString("xmin="+xmin+", xmax="+xmax+", ymin="+ymin+", ymax="+ymax, 10, 10);
+            redrawPoints(component, points, xmin-1, ymin-1);
+            
+            return component;
+        }
+
+        /** redrawPoints
+         * draws points with offset in image and fills background
+         * @param component an image for drawing into
+         * @param points list of points
+         * @param xOffset 
+         * @param yOffset 
+         */
+        private void redrawPoints(BufferedImage component, List<Point> points, int xOffset, int yOffset) {
+            // redraw points
+            Graphics g = component.getGraphics();
+            g.setColor(Color.white);
+            //g.fillRect(0, 0, component.getWidth(), component.getHeight());
+            points/*.stream()*/.forEach(p->{
+                //System.out.println((p.x-xOffset)+","+(p.y-yOffset));
+                component.setRGB(p.x-xOffset, p.y-yOffset, mark);
+            });
+            /*
+            while(!points.isEmpty()){
+                Point p = points.poll();
+                component.setRGB(p.x-xOffset, p.y-yOffset, mark);
+            }*/
+        }
+
+        /** Finds border as a path
+         * de facto provides 8 points floodfill and saves the points
+         * @param xi
+         * @param yi
+         * @param points
+         * @return 
+         */
+        private int[] findBorderPath(int xi, int yi, List<Point> points) {
+            int x,y, xmin,xmax, ymin,ymax;
+            x = xmin = xmax = xi;
+            y = ymin = ymax = yi;
+            Queue<Point> queue = new ArrayDeque<>();
+            queue.clear();
+
+            queue.add(new Point(x, y));
+
+            while(!queue.isEmpty()){
+                Point p = queue.poll();
+                x = p.x;
+                y = p.y;
+                
+                //if(image.getRGB(x, y) == mark) continue; // uz je oznacen
+                if(image.getRGB(x, y) != border) continue; // takovy bod me (uz) nezajima
+                
+                // bod oznacima a ulozime
+                image.setRGB(x, y, mark);
+                points.add(p);
+                
+                // min a max
+                if(x < xmin) xmin = x;
+                else if(xmax < x) xmax = x;
+                if(y < ymin) ymin = y;
+                else if(ymax < y) ymax = y;
+                
+                if(y>0 && image.getRGB(x, y-1) == border) 
+                    queue.add(new Point(x, y-1));
+                if(x<(width-1) && image.getRGB(x+1, y) == border) 
+                    queue.add(new Point(x+1, y));
+                if(y<(height-1) && image.getRGB(x, y+1) == border) 
+                    queue.add(new Point(x, y+1));
+                if(x>0 && image.getRGB(x-1, y) == border) 
+                    queue.add(new Point(x-1, y));
+                if(y>0 && x<(width-1) && image.getRGB(x+1, y-1) == border) 
+                    queue.add(new Point(x+1, y-1));
+                if(y<(height-1) && x<(width-1) && image.getRGB(x+1, y+1) == border) 
+                    queue.add(new Point(x+1, y+1));
+                if(y<(height-1) && x>0 && image.getRGB(x-1, y+1) == border) 
+                    queue.add(new Point(x-1, y+1));
+                if(y>0 && x>0 && image.getRGB(x-1, y-1) == border) 
+                    queue.add(new Point(x-1, y-1));
+            }
+            
+            int [] bounds = {xmin,xmax,ymin,ymax};
+            return bounds;
+        }
+        
+        
     }
 }
