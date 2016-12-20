@@ -192,8 +192,11 @@ public class ImageProcessing {
         return colorI;
     }
     
-    /** erode 
+    /** erode
      * should find borders of components
+     * @param image
+     * @param outside
+     * @param border 
      */
     public static void erode(BufferedImage image, Color outside, Color border){
         int w = image.getWidth();
@@ -266,7 +269,7 @@ public class ImageProcessing {
          * separates components in image
          * @return list of images containing components
          */
-        public static List<BufferedImage> separateComponents(BufferedImage src, Color border, Color mark){
+        public static List<ImageComponent> separateComponents(BufferedImage src, Color border, Color mark){
             SeparatableImage separatable = new SeparatableImage(src, border, mark);
             return separatable.separateComponents();
         }
@@ -275,15 +278,15 @@ public class ImageProcessing {
          * separates components in image
          * @return list of images containing components
          */
-        public List<BufferedImage> separateComponents(){
-            List<BufferedImage> components = new LinkedList<>();
+        public List<ImageComponent> separateComponents(){
+            List<ImageComponent> components = new LinkedList<>();
 
             IntStream.iterate(0, n->n+1)
                     .limit(height)
                     .forEach(y->{
                         for(int x = 0; x < width; x++){
                             if(image.getRGB(x, y) == border){
-                                BufferedImage comp = separateComp(x, y);
+                                ImageComponent comp = separateComp(x, y);
                                 if(comp != null) components.add(comp);
                             }
                         }
@@ -298,7 +301,7 @@ public class ImageProcessing {
         * @param yi y coordinate of start point
         * @return image of a component
         */
-        private BufferedImage separateComp(int xi, int yi){
+        private ImageComponent separateComp(int xi, int yi){
             List<Point> points = new LinkedList<>();
             int [] bounds = findBorderPath(xi, yi, points);
             int xmin = bounds[0];
@@ -311,29 +314,12 @@ public class ImageProcessing {
             
             if(w < 5 || h < 5) return null;
             
-            //w=width;
-            //h=height;
-            
-            //System.out.println(w+"x"+h);
-            BufferedImage component = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-            /*Graphics g = component.getGraphics();
-            g.setColor(Color.white);
-            g.fillRect(0, 0, component.getWidth(), component.getHeight());
-            g.setColor(Color.black);
-            g.drawString("xmin="+xmin+", xmax="+xmax+", ymin="+ymin+", ymax="+ymax, 10, 10);
-            */
-            redrawPoints(component, points, xmin-1, ymin-1);
+            ImageComponent component = ImageComponent.createImageComponent(points,bounds);
             
             return component;
         }
 
-        /** redrawPoints
-         * draws points with offset in image and fills background
-         * @param component an image for drawing into
-         * @param points list of points
-         * @param xOffset 
-         * @param yOffset 
-         */
+        
         private void redrawPoints(BufferedImage component, List<Point> points, int xOffset, int yOffset) {
             // redraw points
             Graphics g = component.getGraphics();
@@ -357,7 +343,7 @@ public class ImageProcessing {
          * @param points
          * @return 
          */
-        private int[] findBorderPath(int xi, int yi, List<Point> points) {
+        public int[] findBorderPath(int xi, int yi, List<Point> points) {
             int x,y, xmin,xmax, ymin,ymax;
             x = xmin = xmax = xi;
             y = ymin = ymax = yi;
@@ -371,10 +357,7 @@ public class ImageProcessing {
                 x = p.x;
                 y = p.y;
                 
-                //if(image.getRGB(x, y) == mark) continue; // uz je oznacen
                 if(image.getRGB(x, y) != border) continue; // takovy bod me (uz) nezajima
-                
-                System.out.println(x+","+y);
                 
                 // bod oznacima a ulozime
                 image.setRGB(x, y, mark);

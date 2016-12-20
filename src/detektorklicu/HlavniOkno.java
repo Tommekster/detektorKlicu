@@ -115,7 +115,6 @@ public class HlavniOkno extends JFrame{
     private void tabsMouse(MouseEvent e){
         if(e.getButton() == MouseEvent.BUTTON3 && e.getClickCount() > 2 
                 && e.getComponent() instanceof JTabbedPane){
-            System.out.println("close tab");
             tabsPane.remove(tabsPane.getSelectedIndex());
         }
     }
@@ -149,7 +148,7 @@ public class HlavniOkno extends JFrame{
         repaint();
     }
     private void detekcitonFloodFill4P(ActionEvent e){
-        ImageProcessing.floodFill(canvas.getImage(), 10, 10, Color.red);
+        ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
         repaint();
     }
     
@@ -164,7 +163,7 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionComponents(ActionEvent e){
-        List<BufferedImage> comps = ImageProcessing.SeparatableImage
+        List<ImageComponent> comps = ImageProcessing.SeparatableImage
                 .separateComponents(canvas.getImage(), Color.GREEN, Color.BLUE);
         comps.stream()
                 .forEach(c->tabsPane.addTab(l.tr("componentImage"), new Canvas(c)));
