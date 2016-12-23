@@ -148,7 +148,8 @@ public class HlavniOkno extends JFrame{
         repaint();
     }
     private void detekcitonFloodFill4P(ActionEvent e){
-        ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
+        //ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
+        ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
         repaint();
     }
     

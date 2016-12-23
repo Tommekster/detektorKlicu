@@ -61,6 +61,28 @@ public class ImageProcessing {
         
         return d < 10;
     }
+    /** Flood-fill background 
+     * fills background with the given color. It uses paralelization.
+     * @param image image to fill
+     * @param color the color of the flood
+     * @return 
+     */
+    public static void floodFillBackground(BufferedImage image, Color color){
+        int h = image.getHeight();
+        int w = image.getWidth();
+        List<Point> startPoints = new LinkedList<>();
+        startPoints.add(new Point(0,0));
+        startPoints.add(new Point(w-1,h-1));
+        startPoints.add(new Point(w-1,0));
+        startPoints.add(new Point(0,h-1));
+        
+        startPoints.add(new Point(0,h/2));
+        startPoints.add(new Point(w/2,0));
+        startPoints.add(new Point(w-1,h/2));
+        startPoints.add(new Point(w/2,h-1));
+        
+        startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y, color));
+    }
     /** FloodFill 
      * @param image image to fill
      * @param xi x-coordinate where flood starts
@@ -312,7 +334,7 @@ public class ImageProcessing {
             int h = (ymax-ymin)+3;
             int w = (xmax-xmin)+3;
             
-            if(w < 5 || h < 5) return null;
+            if(w < 3+10 || h < 3+10) return null;
             
             ImageComponent component = ImageComponent.createImageComponent(points,bounds);
             
