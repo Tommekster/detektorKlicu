@@ -27,9 +27,27 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
+import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.function.ObjIntConsumer;
+import java.util.function.Supplier;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -56,7 +74,7 @@ public class ImageComponent extends BufferedImage{
         comp.xmax = lims[1];
         comp.ymin = lims[2];
         comp.ymax = lims[3];
-        comp.redraw();
+        comp.redraw(true);
         
         return comp;
     }
@@ -66,22 +84,23 @@ public class ImageComponent extends BufferedImage{
     }
     
     private static int [] getBoundaryLimits(List<Point> boundaryPath){
-        int xmin, xmax, ymin, ymax;
         Point first = boundaryPath.get(0);
-        xmin = xmax = first.x;
-        ymin = ymax = first.y;
+        PointExtremes pe = new PointExtremes(first);
         
         Iterator<Point> it = boundaryPath.iterator();
         while(it.hasNext()){
             Point p = it.next();
-            if(p.x < xmin) xmin = p.x;
-            else if(xmax < p.x) xmax = p.x;
-            if(p.y < ymin) ymin = p.y;
-            else if(ymax < p.y) ymax = p.y;
+            pe.checkExtremes(p);
         }
         
-        int [] limits = {xmin,xmax,ymin,ymax};
+        int [] limits = {pe.getXmin(),pe.getXmax(),pe.getYmin(),pe.getYmax()};
         return limits;
+    }
+    
+    private void fillBackground(){
+        Graphics g = this.getGraphics();
+        g.setColor(Color.white);
+        g.fillRect(0, 0, this.getWidth(), this.getHeight());
     }
     
     /** redrawPoints
@@ -90,12 +109,41 @@ public class ImageComponent extends BufferedImage{
     public void redraw(){
         int xOffset = xmin-1;
         int yOffset = ymin-1;
-        Graphics g = this.getGraphics();
-        g.setColor(Color.white);
-        g.fillRect(0, 0, this.getWidth(), this.getHeight());
+        fillBackground();
         boundaryPath.forEach(p->{
             this.setRGB(p.x-xOffset, p.y-yOffset, mark);
         });
+    }
+    public void redraw(boolean boundary){
+        if(!boundary){ 
+            redraw();
+            return;
+        }
+        int xOffset = xmin - 1;
+        int yOffset = ymin - 1;
+        fillBackground();
+        
+        //Point p = boundaryPath.get(0);
+        //this.setRGB(p.x-xOffset, p.y-yOffset, mark);
+        
+        IntStream.iterate(1, n->n+1)
+                .limit(boundaryPath.size()-1)
+                .forEach(i->{
+                    Point prev = boundaryPath.get(i-1);
+                    Point curr = boundaryPath.get(i);
+                    Point p = null;
+                    
+                    if(prev.x == curr.x) {
+                        if(prev.y == curr.y+1) p = new Point(curr);
+                        else if(prev.y == curr.y-1) p = new Point(curr.x-1,curr.y-1);
+                    }
+                    else if(prev.y == curr.y) {
+                        if(prev.x == curr.x+1) p = new Point(curr.x,curr.y-1);
+                        else if(prev.x == curr.x-1) p = new Point(curr.x-1,curr.y);
+                    }
+                    
+                    if(p != null) this.setRGB(p.x-xOffset, p.y-yOffset, mark);
+                });
     }
     
 }

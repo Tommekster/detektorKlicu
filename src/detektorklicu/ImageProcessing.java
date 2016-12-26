@@ -304,15 +304,16 @@ public class ImageProcessing {
             List<ImageComponent> components = new LinkedList<>();
 
             IntStream.iterate(0, n->n+1)
-                    .limit(height)
-                    .forEach(y->{
-                        for(int x = 0; x < width; x++){
-                            if(image.getRGB(x, y) == border){
-                                ImageComponent comp = separateComp(x, y);
-                                if(comp != null) components.add(comp);
-                            }
+                .limit(height)
+                .forEach(y->{
+                    for(int x = 1; x < width-1; x++){
+                        if(image.getRGB(x, y) == border 
+                                && image.getRGB(x-1, y) == Color.red.getRGB()){
+                            ImageComponent comp = separateComp(x, y);
+                            if(comp != null) components.add(comp);
                         }
-                    });
+                    }
+                });
             
             return components;
         }
@@ -324,12 +325,25 @@ public class ImageProcessing {
         * @return image of a component
         */
         private ImageComponent separateComp(int xi, int yi){
-            List<Point> points = new LinkedList<>();
-            int [] bounds = findBorderPath(xi, yi, points);
+            //List<Point> points = new LinkedList<>();
+            /*int [] bounds = 
             int xmin = bounds[0];
             int xmax = bounds[1];
             int ymin = bounds[2];
-            int ymax = bounds[3];
+            int ymax = bounds[3];*/
+            
+            // TODO: opravit: oznaceni hranice
+            List<Point> pts = new LinkedList<>();
+            //findBorderPath(xi, yi, pts);
+            
+            PathFinder pf = new PathFinder(image, xi, yi, 
+                    new Color(border), new Color(mark));
+            int xmin = pf.getXmin();
+            int xmax = pf.getXmax();
+            int ymin = pf.getYmin();
+            int ymax = pf.getYmax();
+            int [] bounds = {xmin,xmax,ymin,ymax};
+            List<Point> points = pf.getPath();
             
             int h = (ymax-ymin)+3;
             int w = (xmax-xmin)+3;
@@ -341,29 +355,12 @@ public class ImageProcessing {
             return component;
         }
 
-        
-        private void redrawPoints(BufferedImage component, List<Point> points, int xOffset, int yOffset) {
-            // redraw points
-            Graphics g = component.getGraphics();
-            g.setColor(Color.white);
-            g.fillRect(0, 0, component.getWidth(), component.getHeight());
-            points/*.stream()*/.forEach(p->{
-                //System.out.println((p.x-xOffset)+","+(p.y-yOffset));
-                component.setRGB(p.x-xOffset, p.y-yOffset, mark);
-            });
-            /*
-            while(!points.isEmpty()){
-                Point p = points.poll();
-                component.setRGB(p.x-xOffset, p.y-yOffset, mark);
-            }*/
-        }
-
         /** Finds border as a path
          * de facto provides 8 points floodfill and saves the points
-         * @param xi
-         * @param yi
-         * @param points
-         * @return 
+         * @param xi x-coordinate of start point
+         * @param yi y-coordinate of start point
+         * @param points output list of the path's points
+         * @return list of extremes of the coordinates {xmin,xmax,ymin,ymax}
          */
         public int[] findBorderPath(int xi, int yi, List<Point> points) {
             int x,y, xmin,xmax, ymin,ymax;
@@ -413,6 +410,246 @@ public class ImageProcessing {
             return bounds;
         }
         
-        
+        /** 
+         * PathFinder class is suitable for finding a path around 
+         * the boundary of the assumed component.
+         */
+        private static class PathFinder{
+            private int surface;
+            private List<Point> points;
+            private PointExtremes extremes;
+            private BufferedImage image;
+            private int border;
+            private int mark;
+            
+            private enum Direction {D0, D90, D180, D270, NOWAY};
+            
+            /**
+             * Constructor prepares PathFinder class
+             * @param image An image containing the component denoted by color
+             * @param border A color denoting the component boundary
+             */
+            public PathFinder(BufferedImage image, Color border, Color mark){
+                points = new LinkedList<>();
+                extremes = null;
+                surface = 0;
+                this.image = image;
+                this.border = border.getRGB();
+                this.mark = mark.getRGB();
+            }
+            /**
+             * Constructor of PathFinder class: prepares and starts finding
+             * @param image An image containing the component denoted by color
+             * @param x x-coordinate of the start point
+             * @param y y-coordinate of the start point
+             * @param border A color denoting the component boundary
+             */
+            public PathFinder(BufferedImage image, int x, int y, 
+                    Color border, Color mark) {
+                this(image,border,mark);
+                findPath(x,y);
+            }
+            /**
+             * Constructor of PathFinder class: prepares and starts finding
+             * @param image An image containing the component denoted by color
+             * @param start A start point
+             * @param border A color denoting the component boundary
+             */
+            public PathFinder(BufferedImage image, Point start, Color border, Color mark){
+                this(image,start.x,start.y,border,mark);
+            }
+            
+            /**
+             * checks point's color if it is a border or it is marked
+             * @param x x-coordinate of the point
+             * @param y y-coordinate of the point
+             * @return true if it is a border or it is marked
+             */
+            private boolean checkColor(int x, int y){
+                int c = image.getRGB(x, y);
+                //return c == border || c == mark;
+                return c != Color.red.getRGB(); // TODO opravit na background
+            }
+            /**
+             * choices direction in order to go around the component
+             * @param p the point from where it goes
+             * @return an appropriate direction
+             */
+            private Direction choiceDirection(Point p){
+                int h = image.getHeight();
+                int w = image.getWidth();
+                // 0 deg
+                if(p.x < w && p.y < h
+                        && checkColor(p.x,p.y) 
+                        && (p.y == 0 || !checkColor(p.x, p.y-1))) 
+                    return Direction.D0;
+                // 90 deg
+                else if(p.y > 0 && p.x < w
+                        && checkColor(p.x, p.y-1)
+                        && (p.x == 0 || !checkColor(p.x-1, p.y-1)))
+                    return Direction.D90;
+                // 180 deg
+                else if(p.x > 0 && p.y > 0
+                        && checkColor(p.x-1, p.y-1)
+                        && (p.y == h || !checkColor(p.x-1, p.y)))
+                    return Direction.D180;
+                // 270 deg
+                else if(p.y < h && p.x > 0
+                        && checkColor(p.x-1, p.y)
+                        && (p.x == w || !checkColor(p.x, p.y)))
+                    return Direction.D270;
+                return Direction.NOWAY; // It couldn't find a way.
+            }
+            /** 
+             * returns the next point in the given direction
+             * @param p point from where it goes
+             * @param d a direction
+             * @return point to where it may go
+             */
+            private Point nextPointInDirection(Point p, Direction d){
+                Point next = null;
+                switch(d){
+                    case D0:
+                        next = new Point(p.x+1,p.y);
+                        break;
+                    case D90:
+                        next = new Point(p.x, p.y-1);
+                        break;
+                    case D180:
+                        next = new Point(p.x-1, p.y);
+                        break;
+                    case D270:
+                        next = new Point(p.x, p.y+1);
+                        break;
+                    case NOWAY:
+                        next = new Point(p.x, p.y);
+                        break;
+                    default:
+                        throw new AssertionError(d.name());
+                }
+                return next;
+            }
+            /**
+             * counts contributions of the surface during walking around
+             * @param p current point
+             * @param d current direction
+             */
+            private void integrateSurface(Point p, Direction d){
+                switch(d){
+                    case D90:
+                        surface-=p.x;
+                        break;
+                    case D270:
+                        surface+=p.x;
+                        break;
+                    default:
+                        // do nothing
+                        break;
+                }
+            }
+            /**
+             * marks surrounded point
+             * @param p reached point
+             * @param d used direction
+             */
+            private void markPoint(Point p, Direction d){
+                int h = image.getHeight();
+                int w = image.getWidth();
+                
+                switch(d){
+                    case D0:
+                        if(p.x >= 0 && p.x < w && p.y < h && p.y >=0)
+                            image.setRGB(p.x, p.y, mark);
+                        break;
+                    case D90:
+                        if(p.x >= 0 && p.x < w && p.y <= h && p.y >0)
+                            image.setRGB(p.x, p.y-1, mark);
+                        break;
+                    case D180:
+                        if(p.x > 0 && p.x <= w && p.y <= h && p.y >0)
+                            image.setRGB(p.x-1, p.y-1, mark);
+                        break;
+                    case D270:
+                        if(p.x > 0 && p.x <= w && p.y < h && p.y >=0)
+                            image.setRGB(p.x-1, p.y, mark);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            /**
+            * generates an ordered list of points surrounding points
+            * @param x x-coordinate of starting point
+            * @param y y-coordinate of starting point
+            */
+            public void findPath(int x, int y){
+                findPath(new Point(x, y));
+            }
+            /**
+             * generates an ordered list of points surrounding points
+             * @param start a starting point
+             */
+            public void findPath(Point start){
+                // initialize extremes: min, max
+                extremes = new PointExtremes(start);
+
+                // starting point belongs to path
+                points.clear();
+                points.add(start);
+                
+                // initialize the surface
+                surface = 0;
+
+                // 1st movement
+                Direction d = choiceDirection(start);
+                markPoint(start, d);
+                integrateSurface(start, d);
+                Point p = nextPointInDirection(start, d);
+                
+                int n=2000;
+                while (!start.equals(p)) { // while: not returned to the start
+                    points.add(p);
+                    extremes.checkExtremes(p);
+                    d = choiceDirection(p);
+                    markPoint(p, d);
+                    if(d == Direction.NOWAY){
+                        System.out.println(p.x+","+p.y+" break");
+                        break;
+                    }
+                    integrateSurface(p, d);
+                    p = nextPointInDirection(p, d);
+                    
+                    System.out.println(p.x+","+p.y);
+                    if(n-- == 0) break;
+                }
+            }
+            
+            public boolean isPathFound(){
+                return !points.isEmpty();
+            }
+            public List<Point> getPath(){
+                return new LinkedList<>(points);
+            }
+            public int getXmin(){
+                if(!isPathFound()) return 0;
+                return extremes.getXmin();
+            }
+            public int getXmax(){
+                if(!isPathFound()) return 0;
+                return extremes.getXmax();
+            }
+            public int getYmin(){
+                if(!isPathFound()) return 0;
+                return extremes.getYmin();
+            }
+            public int getYmax(){
+                if(!isPathFound()) return 0;
+                return extremes.getYmax();
+            }
+            public int getSurface(){
+                if(!isPathFound()) return 0;
+                return surface;
+            }
+        }
     }
 }
