@@ -268,7 +268,7 @@ public class ImageProcessing {
      */
     public static class SeparatableImage{
         private BufferedImage image;
-        private int border, mark;
+        private int border, mark, background;
         private int height, width;
         
         /**
@@ -278,21 +278,25 @@ public class ImageProcessing {
          * @param border color of border
          * @param mark color suitable for marking detected border
          */
-        public SeparatableImage(BufferedImage src, Color border, Color mark){
+        public SeparatableImage(BufferedImage src, Color border, Color mark, 
+                Color background){
             image = src;
             height = image.getHeight();
             width = image.getWidth();
             
             this.border = border.getRGB();
             this.mark = mark.getRGB();
+            this.background = background.getRGB();
         }
         
         /** separateComponents
          * separates components in image
          * @return list of images containing components
          */
-        public static List<ImageComponent> separateComponents(BufferedImage src, Color border, Color mark){
-            SeparatableImage separatable = new SeparatableImage(src, border, mark);
+        public static List<ImageComponent> separateComponents(BufferedImage src, 
+                Color border, Color mark, Color background){
+            SeparatableImage separatable = new SeparatableImage(src, border, 
+                    mark, background);
             return separatable.separateComponents();
         }
         
@@ -308,7 +312,7 @@ public class ImageProcessing {
                 .forEach(y->{
                     for(int x = 1; x < width-1; x++){
                         if(image.getRGB(x, y) == border 
-                                && image.getRGB(x-1, y) == Color.red.getRGB()){
+                                && image.getRGB(x-1, y) == background){
                             ImageComponent comp = separateComp(x, y);
                             if(comp != null) components.add(comp);
                         }
@@ -337,7 +341,7 @@ public class ImageProcessing {
             //findBorderPath(xi, yi, pts);
             
             PathFinder pf = new PathFinder(image, xi, yi, 
-                    new Color(border), new Color(mark));
+                    new Color(border), new Color(mark),  new Color(background));
             int xmin = pf.getXmin();
             int xmax = pf.getXmax();
             int ymin = pf.getYmin();
@@ -421,6 +425,7 @@ public class ImageProcessing {
             private BufferedImage image;
             private int border;
             private int mark;
+            private int background;
             
             private enum Direction {D0, D90, D180, D270, NOWAY};
             
@@ -429,13 +434,14 @@ public class ImageProcessing {
              * @param image An image containing the component denoted by color
              * @param border A color denoting the component boundary
              */
-            public PathFinder(BufferedImage image, Color border, Color mark){
+            public PathFinder(BufferedImage image, Color border, Color mark, Color background){
                 points = new LinkedList<>();
                 extremes = null;
                 surface = 0;
                 this.image = image;
                 this.border = border.getRGB();
                 this.mark = mark.getRGB();
+                this.background = background.getRGB();
             }
             /**
              * Constructor of PathFinder class: prepares and starts finding
@@ -445,8 +451,8 @@ public class ImageProcessing {
              * @param border A color denoting the component boundary
              */
             public PathFinder(BufferedImage image, int x, int y, 
-                    Color border, Color mark) {
-                this(image,border,mark);
+                    Color border, Color mark, Color background) {
+                this(image,border,mark,background);
                 findPath(x,y);
             }
             /**
@@ -455,8 +461,8 @@ public class ImageProcessing {
              * @param start A start point
              * @param border A color denoting the component boundary
              */
-            public PathFinder(BufferedImage image, Point start, Color border, Color mark){
-                this(image,start.x,start.y,border,mark);
+            public PathFinder(BufferedImage image, Point start, Color border, Color mark, Color background){
+                this(image,start.x,start.y,border,mark,background);
             }
             
             /**
@@ -468,7 +474,7 @@ public class ImageProcessing {
             private boolean checkColor(int x, int y){
                 int c = image.getRGB(x, y);
                 //return c == border || c == mark;
-                return c != Color.red.getRGB(); // TODO opravit na background
+                return c != background; 
             }
             /**
              * choices direction in order to go around the component

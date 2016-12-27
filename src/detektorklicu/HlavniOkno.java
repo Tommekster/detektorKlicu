@@ -34,6 +34,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -122,24 +123,76 @@ public class HlavniOkno extends JFrame{
      * Umozni vybrat obrazek k detekci klicu
      * @param e ActionEvent podrobnosti o události
      */
-    private void otevriSoubor(ActionEvent e) {
+    private void openImage(ActionEvent e) {
         final FileFilter filter = new FileNameExtensionFilter(l.tr("otevritSouborJPEGType"), "jpg", "jpeg");
         JFileChooser fileChooser = new JFileChooser(".");
         fileChooser.setDialogTitle(l.tr("otevritSouborTitle"));
         fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
         fileChooser.addChoosableFileFilter(filter);
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-            File vybranySoubor = new File(fileChooser.getCurrentDirectory()
+            File selectedFile = new File(fileChooser.getCurrentDirectory()
                     .getAbsolutePath(), fileChooser.getSelectedFile().getName());
             try {
-                addObrazek(ImageIO.read(vybranySoubor));
-                //repaint();
+                BufferedImage image = ImageIO.read(selectedFile);
+                image = ImageProcessing.gray2RGB(image);
+                addImage(image);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(fileChooser, 
                         l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
                         l.tr("otevritSouborChybaTitle"), 
                         JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+    private void saveImage(ActionEvent ae){
+        final FileNameExtensionFilter filtrBMP = 
+                new FileNameExtensionFilter(l.tr("saveFileBMPType"), "bmp");
+        final FileNameExtensionFilter filtrPNG = 
+                new FileNameExtensionFilter(l.tr("saveFilePNGType"), "png");
+        final JFileChooser jfc = new JFileChooser();
+        jfc.setCurrentDirectory(new File("."));
+        jfc.setDialogTitle(l.tr("saveFileTitle"));
+        jfc.setDialogType(JFileChooser.SAVE_DIALOG);
+        jfc.setSelectedFile(new File(l.tr("saveFileName")+".png"));
+        jfc.setFileFilter(filtrPNG);
+        jfc.addChoosableFileFilter(filtrBMP);
+        jfc.addPropertyChangeListener((pce)->{
+            onExtensionChanged(pce,jfc,filtrPNG,filtrBMP);
+        });
+        if(jfc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
+            String format = "PNG";
+            if(jfc.getFileFilter().equals(filtrBMP)) format = "BMP";
+                
+            try{
+                File vybranySoubor = new File(jfc.getCurrentDirectory()
+                        .getAbsolutePath(), jfc.getSelectedFile().getName());
+                ImageIO.write(canvas.getImage(), format, vybranySoubor);
+            }catch(IOException ex){
+                JOptionPane.showMessageDialog(jfc, 
+                            l.tr("saveFileError")+"\n"+ex.toString(), 
+                            l.tr("saveFileErrorTitle"), 
+                            JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    private void onExtensionChanged(PropertyChangeEvent pce, JFileChooser jfc, FileNameExtensionFilter fpng, FileNameExtensionFilter fbmp){
+        if(pce.getPropertyName().equals(JFileChooser.SELECTED_FILE_CHANGED_PROPERTY)){
+            String extension;
+            if(jfc.getFileFilter().equals(fpng)) extension = ".png";
+            else if(jfc.getFileFilter().equals(fbmp)) extension = ".bmp";
+            else return;
+            
+            File selectedFile = jfc.getSelectedFile();
+            if(selectedFile == null) 
+                jfc.setSelectedFile(new File(l.tr("saveFileName") + extension));
+            else{
+                String name = jfc.getSelectedFile().getName();
+                int i = name.lastIndexOf(".");
+                name = name.substring(0,i) + extension;
+                jfc.setSelectedFile(new File(name));
+            }
+                
         }
     }
     
@@ -165,7 +218,7 @@ public class HlavniOkno extends JFrame{
     
     private void detectionComponents(ActionEvent e){
         List<ImageComponent> comps = ImageProcessing.SeparatableImage
-                .separateComponents(canvas.getImage(), Color.GREEN, Color.BLUE);
+                .separateComponents(canvas.getImage(), Color.GREEN, Color.BLUE, Color.RED);
         comps.stream()
                 .forEach(c->tabsPane.addTab(l.tr("componentImage"), new Canvas(c)));
         repaint();
@@ -174,7 +227,7 @@ public class HlavniOkno extends JFrame{
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
-    private void addObrazek(BufferedImage obrazek){
+    private void addImage(BufferedImage obrazek){
         //canvas.setImage(obrazek);
         tabsPane.addTab(l.tr("sourceImage"), new Canvas(obrazek));
         canvas = (Canvas)tabsPane.getSelectedComponent();
@@ -225,7 +278,7 @@ public class HlavniOkno extends JFrame{
             
             souborMenu.add(souborOtevrit);
             souborMenu.add(souborUlozit);
-            souborUlozit.setEnabled(false);
+            souborUlozit.setEnabled(true);
             souborMenu.addSeparator();
             souborMenu.add(souborKonec);
             
@@ -241,7 +294,8 @@ public class HlavniOkno extends JFrame{
         }
         
         private void inicializujListenery(){
-            souborOtevrit.addActionListener(HlavniOkno.this::otevriSoubor);
+            souborOtevrit.addActionListener(HlavniOkno.this::openImage);
+            souborUlozit.addActionListener(HlavniOkno.this::saveImage);
             detekceDobarvi.addActionListener(HlavniOkno.this::detectionColorise);
             detekceFloodFill.addActionListener(HlavniOkno.this::detekcitonFloodFill4P);
             detekceScanLine.addActionListener(HlavniOkno.this::detectionScanline);
