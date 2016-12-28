@@ -106,7 +106,7 @@ public class HlavniOkno extends JFrame{
             canvas = (Canvas)tabsPane.getSelectedComponent();
         }else{
             canvas = null;
-            mainMenu.disableDetection();
+            mainMenu.disableImageActions();
         }
     }
     /**
@@ -278,7 +278,6 @@ public class HlavniOkno extends JFrame{
             
             souborMenu.add(souborOtevrit);
             souborMenu.add(souborUlozit);
-            souborUlozit.setEnabled(true);
             souborMenu.addSeparator();
             souborMenu.add(souborKonec);
             
@@ -290,7 +289,7 @@ public class HlavniOkno extends JFrame{
             
             napovedaMenu.add(napovedaAbout);
             
-            disableDetection();
+            disableImageActions();
         }
         
         private void inicializujListenery(){
@@ -304,17 +303,19 @@ public class HlavniOkno extends JFrame{
         }
         
         /** zablokuje nabidku detekce */
-        public void disableDetection(){
+        public void disableImageActions(){
             detekceMenu.setEnabled(false);
+            souborUlozit.setEnabled(false);
         }
         /** odblokuje nabidku detekce */
-        public void enableDetection(){
+        public void enableImageActions(){
             detekceMenu.setEnabled(true);
+            souborUlozit.setEnabled(true);
         }
         /** enables or disables the detection menu */
         public void enableDetection(boolean e){
-            if(e) enableDetection();
-            else disableDetection();
+            if(e) enableImageActions();
+            else disableImageActions();
         }
     }
 }

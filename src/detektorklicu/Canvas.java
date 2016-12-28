@@ -70,5 +70,9 @@ class Canvas extends JPanel{
             // Draw image
             g.drawImage(image, left, top, w, h, this);
         }
+        if(image instanceof ImageComponent){
+            ImageComponent im = (ImageComponent)image;
+            setToolTipText("S:"+im.getSurface());
+        }
     }
 }

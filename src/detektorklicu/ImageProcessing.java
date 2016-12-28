@@ -338,7 +338,7 @@ public class ImageProcessing {
             
             // TODO: opravit: oznaceni hranice
             List<Point> pts = new LinkedList<>();
-            //findBorderPath(xi, yi, pts);
+            findBorderPath(xi, yi, pts);
             
             PathFinder pf = new PathFinder(image, xi, yi, 
                     new Color(border), new Color(mark),  new Color(background));
@@ -348,13 +348,15 @@ public class ImageProcessing {
             int ymax = pf.getYmax();
             int [] bounds = {xmin,xmax,ymin,ymax};
             List<Point> points = pf.getPath();
+            int surf = pf.getSurface();
             
             int h = (ymax-ymin)+3;
             int w = (xmax-xmin)+3;
             
             if(w < 3+10 || h < 3+10) return null;
             
-            ImageComponent component = ImageComponent.createImageComponent(points,bounds);
+            ImageComponent component = 
+                    ImageComponent.createImageComponent(points,bounds,surf);
             
             return component;
         }

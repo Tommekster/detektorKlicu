@@ -34,6 +34,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
@@ -56,15 +57,17 @@ import java.util.stream.Stream;
 public class ImageComponent extends BufferedImage{
 
     private List<Point> boundaryPath = null;
-    private int xmin, xmax, ymin, ymax;
+    private int xmin, xmax, ymin, ymax, surface;
     private final int mark = Color.BLACK.getRGB();
     
     public static ImageComponent createImageComponent(List<Point> boundary){
-        int [] lims = getBoundaryLimits(boundary);        
-        return createImageComponent(boundary, lims);
+        int [] lims = getBoundaryLimits(boundary);
+        int surf = getSurface(boundary);
+        return createImageComponent(boundary, lims, 0);
     }
     
-    public static ImageComponent createImageComponent(List<Point> boundary, int [] lims){
+    public static ImageComponent createImageComponent(List<Point> boundary, 
+            int [] lims, int surface){
         int h = (lims[3]-lims[2])+3;
         int w = (lims[1]-lims[0])+3;
         
@@ -74,6 +77,7 @@ public class ImageComponent extends BufferedImage{
         comp.xmax = lims[1];
         comp.ymin = lims[2];
         comp.ymax = lims[3];
+        comp.surface = surface;
         comp.redraw(true);
         
         return comp;
@@ -95,6 +99,25 @@ public class ImageComponent extends BufferedImage{
         
         int [] limits = {pe.getXmin(),pe.getXmax(),pe.getYmin(),pe.getYmax()};
         return limits;
+    }
+    
+    private static int getSurface(List<Point> boundaryPath){
+        AtomicInteger surface = new AtomicInteger(0);
+        IntStream.iterate(1, n->n+1)
+                .limit(boundaryPath.size()-1)
+                .parallel()
+                .forEach(i->{
+                    Point prev = boundaryPath.get(i-1);
+                    Point curr = boundaryPath.get(i);
+                    
+                    if(prev.y == curr.y-1) /* down */ {
+                        surface.getAndAdd(curr.x);
+                    }else if(prev.y == curr.y+1) /* up */ {
+                        surface.getAndAdd(-curr.x);
+                    }
+        });
+        
+        return surface.get();
     }
     
     private void fillBackground(){
@@ -146,4 +169,5 @@ public class ImageComponent extends BufferedImage{
                 });
     }
     
+    public int getSurface(){return surface;}
 }
