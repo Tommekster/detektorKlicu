@@ -27,28 +27,10 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.PrimitiveIterator;
-import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntConsumer;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
-import java.util.function.IntToDoubleFunction;
-import java.util.function.IntToLongFunction;
-import java.util.function.IntUnaryOperator;
-import java.util.function.ObjIntConsumer;
-import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 /**
  *
@@ -63,7 +45,7 @@ public class ImageComponent extends BufferedImage{
     public static ImageComponent createImageComponent(List<Point> boundary){
         int [] lims = getBoundaryLimits(boundary);
         int surf = getSurface(boundary);
-        return createImageComponent(boundary, lims, 0);
+        return createImageComponent(boundary, lims, surf);
     }
     
     public static ImageComponent createImageComponent(List<Point> boundary, 
@@ -77,7 +59,12 @@ public class ImageComponent extends BufferedImage{
         comp.xmax = lims[1];
         comp.ymin = lims[2];
         comp.ymax = lims[3];
-        comp.surface = surface;
+        
+        Point first = boundary.get(0);
+        Point last = boundary.get(boundary.size()-1);
+        if(!(first.x == last.x || first.y == last.y)) comp.surface = 0;
+        else comp.surface = surface;
+        
         comp.redraw(true);
         
         return comp;
@@ -102,7 +89,14 @@ public class ImageComponent extends BufferedImage{
     }
     
     private static int getSurface(List<Point> boundaryPath){
+        Point first = boundaryPath.get(0);
+        Point last = boundaryPath.get(boundaryPath.size()-1);
+        if(!(first.x == last.x || first.y == last.y)) return 0;
+        
         AtomicInteger surface = new AtomicInteger(0);
+        if(first.y != last.y){
+            surface.getAndAdd((first.y - last.y)*first.x);
+        }
         IntStream.iterate(1, n->n+1)
                 .limit(boundaryPath.size()-1)
                 .parallel()

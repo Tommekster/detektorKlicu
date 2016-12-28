@@ -614,7 +614,7 @@ public class ImageProcessing {
                 integrateSurface(start, d);
                 Point p = nextPointInDirection(start, d);
                 
-                int n=2000;
+                int n=image.getWidth()*image.getHeight()/4;
                 while (!start.equals(p)) { // while: not returned to the start
                     points.add(p);
                     extremes.checkExtremes(p);
@@ -627,7 +627,7 @@ public class ImageProcessing {
                     integrateSurface(p, d);
                     p = nextPointInDirection(p, d);
                     
-                    System.out.println(p.x+","+p.y);
+                    //System.out.println(p.x+","+p.y);
                     if(n-- == 0) break;
                 }
             }
