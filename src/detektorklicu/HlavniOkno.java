@@ -23,10 +23,8 @@
  */
 package detektorklicu;
 
-import com.sun.beans.util.Cache;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -38,8 +36,6 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -47,8 +43,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -63,7 +59,8 @@ public class HlavniOkno extends JFrame{
     private final JTabbedPane tabsPane = new JTabbedPane();
     
     private Canvas canvas = null; //new Canvas();
-    
+    private Process process = null;
+    private WorkerDialog workerDialog;
     
     public HlavniOkno(){
         super();
@@ -197,31 +194,65 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionColorise(ActionEvent e){
-        canvas.setImage(ImageProcessing.gray2RGB(canvas.getImage()));
+        //canvas.setImage(ImageProcessing.gray2RGB(canvas.getImage()));
+        //ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
         repaint();
     }
     private void detekcitonFloodFill4P(ActionEvent e){
         //ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
-        ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
-        repaint();
+        process = new Process(": "+l.tr("detekceFloodFill")) {
+
+            @Override
+            public void action() {
+                ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
+            }
+        };
+        process.execute();
     }
     
     private void detectionScanline(ActionEvent e){
-        ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
-        repaint();
+        process = new Process(": "+l.tr("detekceScanLine")) {
+
+            @Override
+            public void action() {
+                ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
+            }
+        };
+        process.execute();
     }
     
     private void detectionErode(ActionEvent e){
-        ImageProcessing.erode(canvas.getImage(), Color.red, Color.GREEN);
-        repaint();
+        process = new Process(": "+l.tr("detekceErode")) {
+
+            @Override
+            public void action() {
+                ImageProcessing.erode(canvas.getImage(), Color.red, Color.GREEN);
+            }
+        };
+        process.execute();
     }
     
     private void detectionComponents(ActionEvent e){
-        List<ImageComponent> comps = ImageProcessing.SeparatableImage
-                .separateComponents(canvas.getImage(), Color.GREEN, Color.BLUE, Color.RED);
-        comps.stream()
-                .forEach(c->tabsPane.addTab(l.tr("componentImage"), new Canvas(c)));
-        repaint();
+        List<ImageComponent> comps;
+        process = new Process(": "+l.tr("detekceComponent")) {
+
+            @Override
+            public void action() {
+                ImageComponent component;
+                while(
+                        (component = ImageProcessing.SeparatableImage
+                                .findOneComponent(canvas.getImage(), 
+                                        Color.GREEN, Color.BLUE, Color.RED)) != null) 
+                    tabsPane.addTab(l.tr("componentImage"), new Canvas(component));
+                /*List<ImageComponent> comps = ImageProcessing.SeparatableImage
+                    .separateComponents(canvas.getImage(), Color.GREEN, 
+                            Color.BLUE, Color.RED);
+                comps.stream()
+                    .forEach(c->tabsPane.addTab(l.tr("componentImage"), 
+                            new Canvas(c)));*/
+            }
+        };
+        process.execute();
     }
     
     /** setter pro obrazek do kresliciho panelu
@@ -232,6 +263,38 @@ public class HlavniOkno extends JFrame{
         tabsPane.addTab(l.tr("sourceImage"), new Canvas(obrazek));
         canvas = (Canvas)tabsPane.getSelectedComponent();
         mainMenu.enableDetection(canvas.isImageInside());
+    }
+    
+    private void disableCounting(boolean disable){
+        mainMenu.enableDetection(!disable);
+    }
+    
+    abstract class Process extends SwingWorker<Void, Void>{
+        abstract public void action();
+        WorkerDialog workerDialog;
+        
+        public Process(String title){
+            workerDialog = new WorkerDialog(HlavniOkno.this,title) {
+                @Override
+                public void cancelJob() {
+                    cancel(true);
+                    workerDialog.setVisible(false);
+                }
+            };
+        }
+        
+        @Override
+        protected Void doInBackground() throws Exception {
+            workerDialog.setVisible(true);
+            action();
+            return null;
+        }
+        
+        @Override
+        public void done(){
+            HlavniOkno.this.repaint();
+            workerDialog.setVisible(false);
+        }
     }
     
     /** Hlavni nabidka

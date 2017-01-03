@@ -277,6 +277,7 @@ public class ImageProcessing {
          * @param src an image with components denoted by border
          * @param border color of border
          * @param mark color suitable for marking detected border
+         * @param background
          */
         public SeparatableImage(BufferedImage src, Color border, Color mark, 
                 Color background){
@@ -291,6 +292,10 @@ public class ImageProcessing {
         
         /** separateComponents
          * separates components in image
+         * @param src
+         * @param border
+         * @param mark
+         * @param background
          * @return list of images containing components
          */
         public static List<ImageComponent> separateComponents(BufferedImage src, 
@@ -298,6 +303,21 @@ public class ImageProcessing {
             SeparatableImage separatable = new SeparatableImage(src, border, 
                     mark, background);
             return separatable.separateComponents();
+        }
+        
+        /** separateComponents
+         * separates components in image
+         * @param src
+         * @param border
+         * @param mark
+         * @param background
+         * @return list of images containing components
+         */
+        public static ImageComponent findOneComponent(BufferedImage src, 
+                Color border, Color mark, Color background){
+            SeparatableImage separatable = new SeparatableImage(src, border, 
+                    mark, background);
+            return separatable.findOneComponent();
         }
         
         /** separateComponents
@@ -320,6 +340,29 @@ public class ImageProcessing {
                 });
             
             return components;
+        }
+        
+        /** separateComponents
+         * separates components in image
+         * @return list of images containing components
+         */
+        public ImageComponent findOneComponent(){
+            ImageComponent component = null;
+
+            out:for(int y = 0; y < height; y++){
+                    for(int x = 1; x < width-1; x++){
+                        if(image.getRGB(x, y) == border 
+                                && image.getRGB(x-1, y) == background){
+                            ImageComponent comp = separateComp(x, y);
+                            if(comp != null){
+                                component = comp;
+                                break out;
+                            }
+                        }
+                    }
+            }
+            
+            return component;
         }
         
         /** separates a component
