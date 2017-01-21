@@ -69,7 +69,7 @@ public class LabelImage extends BufferedImage{
         colors.add(Color.white);
         colors.add(Color.cyan);
         //colors.add(Color.darkGray);
-        //colors.add(Color.gray);
+        colors.add(Color.gray);
         colors.add(Color.green);
         colors.add(Color.yellow);
         colors.add(Color.lightGray);
@@ -77,6 +77,7 @@ public class LabelImage extends BufferedImage{
         colors.add(Color.orange);
         colors.add(Color.pink);
         colors.add(Color.red);
+        colors.add(Color.YELLOW);
         
         return colors;
     }
@@ -109,7 +110,7 @@ public class LabelImage extends BufferedImage{
                 if(labels[x][y] == 0)
                     li.setRGB(x, y, y);
                 else 
-                    li.setRGB(x, y, colors.get(labels[x][y]-1 % colors.size()).getRGB());
+                    li.setRGB(x, y, colors.get((labels[x][y]-1)%colors.size()).getRGB());
             }
         });
         

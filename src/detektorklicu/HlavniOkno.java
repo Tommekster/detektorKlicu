@@ -249,14 +249,16 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionScanline(ActionEvent e){
-        process = new Process(": "+l.tr("detekceScanLine")) {
+        /*process = new Process(": "+l.tr("detekceScanLine")) {
 
             @Override
-            public void action() {
-                ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
-            }
+            public void action() {*/
+                //ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
+                if(canvas.getImage() instanceof LabelImage) 
+                    AreaDetector.detectRegions((LabelImage)canvas.getImage());
+          /*  }
         };
-        process.execute();
+        process.execute();*/
     }
     
     private void detectionErode(ActionEvent e){
