@@ -32,9 +32,13 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
@@ -82,7 +86,7 @@ public class HlavniOkno extends JFrame{
         tabsPane.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e){
-                tabsMouse(e);
+                tabsMouseEvent(e);
             }
         });
         //tabsPane.addTab(l.tr("sourceImage"), canvas);
@@ -99,8 +103,10 @@ public class HlavniOkno extends JFrame{
     private void tabsChange(ChangeEvent e){
         if(e.getSource() != tabsPane) return;
         if(tabsPane.getTabCount() > 0){
-            if(tabsPane.getSelectedComponent() instanceof Canvas)
-            canvas = (Canvas)tabsPane.getSelectedComponent();
+            if(tabsPane.getSelectedComponent() instanceof Canvas){
+                canvas = (Canvas)tabsPane.getSelectedComponent();
+                mainMenu.enableLabelsShowing(canvas.getImage() instanceof LabelImage);
+            }
         }else{
             canvas = null;
             mainMenu.disableImageActions();
@@ -110,7 +116,7 @@ public class HlavniOkno extends JFrame{
      * 
      * @param e MouseEvent further info about layer
      */
-    private void tabsMouse(MouseEvent e){
+    private void tabsMouseEvent(MouseEvent e){
         if(e.getButton() == MouseEvent.BUTTON3 && e.getClickCount() > 2 
                 && e.getComponent() instanceof JTabbedPane){
             tabsPane.remove(tabsPane.getSelectedIndex());
@@ -194,17 +200,49 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionColorise(ActionEvent e){
+        List<Color> colors = new LinkedList<>();
+        colors.add(Color.black);
+        colors.add(Color.cyan);
+        colors.add(Color.darkGray);
+        colors.add(Color.gray);
+        colors.add(Color.green);
+        colors.add(Color.yellow);
+        colors.add(Color.lightGray);
+        colors.add(Color.magenta);
+        colors.add(Color.orange);
+        colors.add(Color.pink);
+        colors.add(Color.red);
+        byte [] reds = new byte [colors.size()];
+        byte [] greens = new byte [colors.size()];
+        byte [] blues = new byte[colors.size()];
+        for(int j = 0; j < colors.size(); j++){
+            reds[j] = (byte)colors.get(j).getRed();
+            greens[j] = (byte)colors.get(j).getGreen();
+            blues[j] = (byte)colors.get(j).getBlue();
+        }
+        
+        IndexColorModel cm = new IndexColorModel(4, reds.length, reds, greens, blues);
+        BufferedImage pic = new BufferedImage(5, 5, BufferedImage.TYPE_BYTE_INDEXED, cm);
+        colors.add(Color.white);
+        colors.add(Color.blue);
+        for(int j = 0; j < pic.getWidth(); j++){
+            for(int i = 0; i < pic.getHeight(); i++){
+                pic.setRGB(j, i, colors.get(j%colors.size()).getRGB());
+                //System.out.println("["+i+","+j+"]");
+            }
+        }
+        addImage(pic);
         //canvas.setImage(ImageProcessing.gray2RGB(canvas.getImage()));
         //ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
         repaint();
     }
-    private void detekcitonFloodFill4P(ActionEvent e){
+    private void detecitonFloodFill4P(ActionEvent e){
         //ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
         process = new Process(": "+l.tr("detekceFloodFill")) {
 
             @Override
             public void action() {
-                ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
+                canvas.setImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
             }
         };
         process.execute();
@@ -253,6 +291,11 @@ public class HlavniOkno extends JFrame{
             }
         };
         process.execute();
+    }
+    
+    private void toolShowLabels(ActionEvent e){
+        LabelImage image = (LabelImage)canvas.getImage();
+        addImage(image.getLabels(LabelImage.getPallete()));
     }
     
     /** setter pro obrazek do kresliciho panelu
@@ -304,7 +347,7 @@ public class HlavniOkno extends JFrame{
         /** Reference na rodice hlavni nabidky */
         HlavniOkno okno;
         
-        private final JMenuBar hlavniNabidka = new JMenuBar();
+        private final JMenuBar menuBar = new JMenuBar();
         
         private final JMenu souborMenu = new JMenu(l.tr("souborMenu"));
         private final JMenuItem souborOtevrit = new JMenuItem(l.tr("souborOtevrit"));
@@ -317,6 +360,9 @@ public class HlavniOkno extends JFrame{
         private final JMenuItem detekceScanLine = new JMenuItem(l.tr("detekceScanLine"));
         private final JMenuItem detekceErode = new JMenuItem(l.tr("detekceErode"));
         private final JMenuItem detekceComponent = new JMenuItem(l.tr("detekceComponent"));
+        
+        private final JMenu toolsMenu = new JMenu(l.tr("toolsMenu"));
+        private final JMenuItem toolShowLabels = new JMenuItem(l.tr("toolShowLabels"));
         
         private final JMenu napovedaMenu = new JMenu(l.tr("napovedaMenu"));
         private final JMenuItem napovedaAbout = new JMenuItem(l.tr("napovedaAbout"));
@@ -333,11 +379,12 @@ public class HlavniOkno extends JFrame{
 
         /** Propoji polozky menu s nabidkou a vlozi ji do okna */
         private void inicializace() {
-            okno.setJMenuBar(hlavniNabidka);
+            okno.setJMenuBar(menuBar);
             
-            hlavniNabidka.add(souborMenu);
-            hlavniNabidka.add(detekceMenu);
-            hlavniNabidka.add(napovedaMenu);
+            menuBar.add(souborMenu);
+            menuBar.add(detekceMenu);
+            menuBar.add(toolsMenu);
+            menuBar.add(napovedaMenu);
             
             souborMenu.add(souborOtevrit);
             souborMenu.add(souborUlozit);
@@ -350,6 +397,9 @@ public class HlavniOkno extends JFrame{
             detekceMenu.add(detekceErode);
             detekceMenu.add(detekceComponent);
             
+            toolsMenu.add(toolShowLabels);
+            toolShowLabels.setEnabled(false);
+            
             napovedaMenu.add(napovedaAbout);
             
             disableImageActions();
@@ -359,10 +409,11 @@ public class HlavniOkno extends JFrame{
             souborOtevrit.addActionListener(HlavniOkno.this::openImage);
             souborUlozit.addActionListener(HlavniOkno.this::saveImage);
             detekceDobarvi.addActionListener(HlavniOkno.this::detectionColorise);
-            detekceFloodFill.addActionListener(HlavniOkno.this::detekcitonFloodFill4P);
+            detekceFloodFill.addActionListener(HlavniOkno.this::detecitonFloodFill4P);
             detekceScanLine.addActionListener(HlavniOkno.this::detectionScanline);
             detekceErode.addActionListener(HlavniOkno.this::detectionErode);
             detekceComponent.addActionListener(HlavniOkno.this::detectionComponents);
+            toolShowLabels.addActionListener(HlavniOkno.this::toolShowLabels);
         }
         
         /** zablokuje nabidku detekce */
@@ -374,6 +425,10 @@ public class HlavniOkno extends JFrame{
         public void enableImageActions(){
             detekceMenu.setEnabled(true);
             souborUlozit.setEnabled(true);
+        }
+        /** enables showLabel action in tools*/
+        public void enableLabelsShowing(boolean e){
+            toolShowLabels.setEnabled(e);
         }
         /** enables or disables the detection menu */
         public void enableDetection(boolean e){

@@ -38,7 +38,6 @@ import java.time.Clock;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import javafx.geometry.Bounds;
 import javax.swing.JFrame;
 
 /** ImageProcessing
@@ -62,14 +61,17 @@ public class ImageProcessing {
         return d < 10;
     }
     /** Flood-fill background 
-     * fills background with the given color. It uses paralelization.
+     * fills background with the given color. It uses parallelization.
      * @param image image to fill
      * @param color the color of the flood
      * @return 
      */
-    public static void floodFillBackground(BufferedImage image, Color color){
+    public static LabelImage floodFillBackground(BufferedImage image, Color color){
         int h = image.getHeight();
         int w = image.getWidth();
+        
+        LabelImage labelled = LabelImage.createLabelImage(image);
+        
         List<Point> startPoints = new LinkedList<>();
         startPoints.add(new Point(0,0));
         startPoints.add(new Point(w-1,h-1));
@@ -81,7 +83,9 @@ public class ImageProcessing {
         startPoints.add(new Point(w-1,h/2));
         startPoints.add(new Point(w/2,h-1));
         
-        startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y, color));
+        startPoints.stream().parallel().forEach(p->floodFill(labelled, p.x, p.y, color));
+        
+        return labelled;
     }
     /** FloodFill 
      * @param image image to fill
@@ -90,7 +94,7 @@ public class ImageProcessing {
      * @param color the color of the flood
      * @return 
      */
-    public static void floodFill(BufferedImage image, int xi, int yi, Color color){
+    public static void floodFill(LabelImage image, int xi, int yi, Color color){
         //Deque<Point> stack = new ArrayDeque<>();
         Queue<Point> queue = new ArrayDeque<>();
         queue.clear();
@@ -114,6 +118,7 @@ public class ImageProcessing {
             oRGB = image.getRGB(x,y);
             
             image.setRGB(x, y, nRGB);
+            image.setLabel(x, y, 0);
             if(y>0 && testBarvy(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
             if(x<(w-1) && testBarvy(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
             if(y<(h-1) && testBarvy(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
@@ -671,7 +676,10 @@ public class ImageProcessing {
                     p = nextPointInDirection(p, d);
                     
                     //System.out.println(p.x+","+p.y);
-                    if(n-- == 0) break;
+                    if(n-- == 0) {
+                        System.out.println("timeout");
+                        break;
+                    }
                 }
             }
             
