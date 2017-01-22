@@ -28,6 +28,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -115,6 +116,33 @@ public class LabelImage extends BufferedImage{
         });
         
         return li;
+    }
+    
+    //private void cosik(int i){}
+    
+    public List<Integer> getUniqueLabels(){
+        List<List<Integer>> inRow = new ArrayList<>(getWidth());
+        
+        IntStream.iterate(0, n->n+1).limit(getWidth())
+                .forEachOrdered(i->inRow.add(new ArrayList<>()));
+        
+        IntStream.iterate(0, i->i+1).limit(getWidth()).parallel().forEach(x->{
+            for(int y = 0; y < getHeight(); y++){
+                int ii = getLabel(x, y);
+                if(ii == 0) continue;
+                Integer i = new Integer(ii);
+                if(!inRow.get(x).contains(i)) inRow.get(x).add(i);
+            }
+        });
+        
+        List<Integer> uniqueLabels = new ArrayList<>();
+        inRow.forEach((row) -> {
+            row.stream().filter((i) -> (!uniqueLabels.contains(i))).forEachOrdered((i) -> {
+                uniqueLabels.add(i);
+            });
+        });
+        
+        return uniqueLabels;
     }
     
     private final int [][] labels;

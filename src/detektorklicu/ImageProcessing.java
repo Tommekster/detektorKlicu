@@ -24,21 +24,18 @@
 package detektorklicu;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ColorConvertOp;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Stack;
 import java.util.stream.IntStream;
 import static java.lang.Math.abs;
-import java.time.Clock;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import javax.swing.JFrame;
 
 /** ImageProcessing
  * class containing image processing functions
@@ -272,41 +269,27 @@ public class ImageProcessing {
      * The components must be denoted in advance.
      */
     public static class SeparatableImage{
-        private BufferedImage image;
-        private int border, mark, background;
+        private LabelImage image;
         private int height, width;
         
         /**
          * crates an instance of SeparatableImage
          * and sets an image and basic parameters
          * @param src an image with components denoted by border
-         * @param border color of border
-         * @param mark color suitable for marking detected border
-         * @param background
          */
-        public SeparatableImage(BufferedImage src, Color border, Color mark, 
-                Color background){
+        public SeparatableImage(LabelImage src){
             image = src;
             height = image.getHeight();
             width = image.getWidth();
-            
-            this.border = border.getRGB();
-            this.mark = mark.getRGB();
-            this.background = background.getRGB();
         }
         
         /** separateComponents
          * separates components in image
          * @param src
-         * @param border
-         * @param mark
-         * @param background
          * @return list of images containing components
          */
-        public static List<ImageComponent> separateComponents(BufferedImage src, 
-                Color border, Color mark, Color background){
-            SeparatableImage separatable = new SeparatableImage(src, border, 
-                    mark, background);
+        public static List<ImageComponent> separateComponents(LabelImage src){
+            SeparatableImage separatable = new SeparatableImage(src);
             return separatable.separateComponents();
         }
         
@@ -318,11 +301,10 @@ public class ImageProcessing {
          * @param background
          * @return list of images containing components
          */
-        public static ImageComponent findOneComponent(BufferedImage src, 
-                Color border, Color mark, Color background){
-            SeparatableImage separatable = new SeparatableImage(src, border, 
-                    mark, background);
-            return separatable.findOneComponent();
+        public static ImageComponent findOneComponent(LabelImage src, 
+                int label){
+            SeparatableImage separatable = new SeparatableImage(src);
+            return separatable.findOneComponent(label);
         }
         
         /** separateComponents
@@ -330,18 +312,14 @@ public class ImageProcessing {
          * @return list of images containing components
          */
         public List<ImageComponent> separateComponents(){
-            List<ImageComponent> components = new LinkedList<>();
+            List<Integer> labels = image.getUniqueLabels();
+            List<ImageComponent> components = new ArrayList<>(labels.size());
 
             IntStream.iterate(0, n->n+1)
-                .limit(height)
-                .forEach(y->{
-                    for(int x = 1; x < width-1; x++){
-                        if(image.getRGB(x, y) == border 
-                                && image.getRGB(x-1, y) == background){
-                            ImageComponent comp = separateComp(x, y);
-                            if(comp != null) components.add(comp);
-                        }
-                    }
+                .limit(labels.size())
+                .forEach(lbl->{
+                    ImageComponent comp = findOneComponent(lbl);
+                    if(comp != null) components.add(comp);
                 });
             
             return components;
@@ -349,16 +327,16 @@ public class ImageProcessing {
         
         /** separateComponents
          * separates components in image
+         * @param label
          * @return list of images containing components
          */
-        public ImageComponent findOneComponent(){
+        public ImageComponent findOneComponent(int label){
             ImageComponent component = null;
 
             out:for(int y = 0; y < height; y++){
                     for(int x = 1; x < width-1; x++){
-                        if(image.getRGB(x, y) == border 
-                                && image.getRGB(x-1, y) == background){
-                            ImageComponent comp = separateComp(x, y);
+                        if(image.getLabel(x, y) == label){
+                            ImageComponent comp = separateComp(x, y, label);
                             if(comp != null){
                                 component = comp;
                                 break out;
@@ -376,7 +354,7 @@ public class ImageProcessing {
         * @param yi y coordinate of start point
         * @return image of a component
         */
-        private ImageComponent separateComp(int xi, int yi){
+        private ImageComponent separateComp(int xi, int yi, int label){
             //List<Point> points = new LinkedList<>();
             /*int [] bounds = 
             int xmin = bounds[0];
@@ -385,11 +363,10 @@ public class ImageProcessing {
             int ymax = bounds[3];*/
             
             // TODO: opravit: oznaceni hranice
-            List<Point> pts = new LinkedList<>();
-            findBorderPath(xi, yi, pts);
+            /*List<Point> pts = new LinkedList<>();
+            findBorderPath(xi, yi, pts);*/
             
-            PathFinder pf = new PathFinder(image, xi, yi, 
-                    new Color(border), new Color(mark),  new Color(background));
+            PathFinder pf = new PathFinder(image, new Point(xi, yi), label);
             int xmin = pf.getXmin();
             int xmax = pf.getXmax();
             int ymin = pf.getYmin();
@@ -415,7 +392,7 @@ public class ImageProcessing {
          * @param yi y-coordinate of start point
          * @param points output list of the path's points
          * @return list of extremes of the coordinates {xmin,xmax,ymin,ymax}
-         */
+         * /
         public int[] findBorderPath(int xi, int yi, List<Point> points) {
             int x,y, xmin,xmax, ymin,ymax;
             x = xmin = xmax = xi;
@@ -471,11 +448,10 @@ public class ImageProcessing {
         private static class PathFinder{
             private int surface;
             private List<Point> points;
+            private List<Point> collisions;
             private PointExtremes extremes;
-            private BufferedImage image;
-            private int border;
-            private int mark;
-            private int background;
+            private LabelImage image;
+            private int label;
             
             private enum Direction {D0, D90, D180, D270, NOWAY};
             
@@ -484,14 +460,13 @@ public class ImageProcessing {
              * @param image An image containing the component denoted by color
              * @param border A color denoting the component boundary
              */
-            public PathFinder(BufferedImage image, Color border, Color mark, Color background){
+            public PathFinder(LabelImage image, int label){
                 points = new LinkedList<>();
+                collisions = new LinkedList<>();
                 extremes = null;
                 surface = 0;
                 this.image = image;
-                this.border = border.getRGB();
-                this.mark = mark.getRGB();
-                this.background = background.getRGB();
+                this.label = label;
             }
             /**
              * Constructor of PathFinder class: prepares and starts finding
@@ -500,31 +475,34 @@ public class ImageProcessing {
              * @param y y-coordinate of the start point
              * @param border A color denoting the component boundary
              */
-            public PathFinder(BufferedImage image, int x, int y, 
-                    Color border, Color mark, Color background) {
-                this(image,border,mark,background);
-                findPath(x,y);
-            }
-            /**
-             * Constructor of PathFinder class: prepares and starts finding
-             * @param image An image containing the component denoted by color
-             * @param start A start point
-             * @param border A color denoting the component boundary
-             */
-            public PathFinder(BufferedImage image, Point start, Color border, Color mark, Color background){
-                this(image,start.x,start.y,border,mark,background);
+            public PathFinder(LabelImage image, Point start, int label) {
+                this(image,label);
+                findPath(start.x,start.y);
             }
             
             /**
-             * checks point's color if it is a border or it is marked
+             * checks if point belongs to the region
              * @param x x-coordinate of the point
              * @param y y-coordinate of the point
-             * @return true if it is a border or it is marked
+             * @return true if 
              */
-            private boolean checkColor(int x, int y){
-                int c = image.getRGB(x, y);
-                //return c == border || c == mark;
-                return c != background; 
+            private boolean isInRegion(int x, int y){
+                return image.getLabel(x, y) == label;
+            }
+            /**
+             * 
+             * @param oldOne
+             * @param newOne
+             * @param p
+             * @return 
+             */
+            private Direction assignDirection(Direction oldOne, Direction newOne, Point p){
+                if(oldOne == Direction.NOWAY || collisions.contains(p)) 
+                    oldOne = newOne;
+                else if(oldOne != Direction.NOWAY)
+                    collisions.add(p);
+                
+                return oldOne;
             }
             /**
              * choices direction in order to go around the component
@@ -534,27 +512,29 @@ public class ImageProcessing {
             private Direction choiceDirection(Point p){
                 int h = image.getHeight();
                 int w = image.getWidth();
+                
+                Direction d = Direction.NOWAY;
                 // 0 deg
                 if(p.x < w && p.y < h
-                        && checkColor(p.x,p.y) 
-                        && (p.y == 0 || !checkColor(p.x, p.y-1))) 
-                    return Direction.D0;
+                        && isInRegion(p.x,p.y) 
+                        && (p.y == 0 || !isInRegion(p.x, p.y-1))) 
+                    d = assignDirection(d, Direction.D0, p);
                 // 90 deg
                 else if(p.y > 0 && p.x < w
-                        && checkColor(p.x, p.y-1)
-                        && (p.x == 0 || !checkColor(p.x-1, p.y-1)))
-                    return Direction.D90;
+                        && isInRegion(p.x, p.y-1)
+                        && (p.x == 0 || !isInRegion(p.x-1, p.y-1)))
+                    d = assignDirection(d, Direction.D90, p);
                 // 180 deg
                 else if(p.x > 0 && p.y > 0
-                        && checkColor(p.x-1, p.y-1)
-                        && (p.y == h || !checkColor(p.x-1, p.y)))
-                    return Direction.D180;
+                        && isInRegion(p.x-1, p.y-1)
+                        && (p.y == h || !isInRegion(p.x-1, p.y)))
+                    d = assignDirection(d, Direction.D180, p);
                 // 270 deg
                 else if(p.y < h && p.x > 0
-                        && checkColor(p.x-1, p.y)
-                        && (p.x == w || !checkColor(p.x, p.y)))
-                    return Direction.D270;
-                return Direction.NOWAY; // It couldn't find a way.
+                        && isInRegion(p.x-1, p.y)
+                        && (p.x == w || !isInRegion(p.x, p.y)))
+                    d = assignDirection(d, Direction.D270, p);
+                return d; 
             }
             /** 
              * returns the next point in the given direction
@@ -607,7 +587,7 @@ public class ImageProcessing {
              * marks surrounded point
              * @param p reached point
              * @param d used direction
-             */
+             * /
             private void markPoint(Point p, Direction d){
                 int h = image.getHeight();
                 int w = image.getWidth();
@@ -658,16 +638,16 @@ public class ImageProcessing {
 
                 // 1st movement
                 Direction d = choiceDirection(start);
-                markPoint(start, d);
+                //markPoint(start, d);
                 integrateSurface(start, d);
                 Point p = nextPointInDirection(start, d);
                 
-                int n=image.getWidth()*image.getHeight()/4;
+                int n = image.getWidth()*image.getHeight()/4;
                 while (!start.equals(p)) { // while: not returned to the start
                     points.add(p);
                     extremes.checkExtremes(p);
                     d = choiceDirection(p);
-                    markPoint(p, d);
+                    //markPoint(p, d);
                     if(d == Direction.NOWAY){
                         System.out.println(p.x+","+p.y+" break");
                         break;

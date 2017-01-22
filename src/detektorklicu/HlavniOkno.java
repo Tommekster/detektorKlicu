@@ -249,16 +249,16 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionScanline(ActionEvent e){
-        /*process = new Process(": "+l.tr("detekceScanLine")) {
+        process = new Process(": "+l.tr("detekceScanLine")) {
 
             @Override
-            public void action() {*/
+            public void action() {
                 //ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
                 if(canvas.getImage() instanceof LabelImage) 
                     AreaDetector.detectRegions((LabelImage)canvas.getImage());
-          /*  }
+            }
         };
-        process.execute();*/
+        process.execute();
     }
     
     private void detectionErode(ActionEvent e){
@@ -273,23 +273,21 @@ public class HlavniOkno extends JFrame{
     }
     
     private void detectionComponents(ActionEvent e){
-        List<ImageComponent> comps;
         process = new Process(": "+l.tr("detekceComponent")) {
 
             @Override
             public void action() {
+                LabelImage image;
+                if(canvas.getImage() instanceof LabelImage)
+                    image = (LabelImage)canvas.getImage();
+                else return;
                 ImageComponent component;
-                while(
-                        (component = ImageProcessing.SeparatableImage
-                                .findOneComponent(canvas.getImage(), 
-                                        Color.GREEN, Color.BLUE, Color.RED)) != null) 
+                List<Integer> labels = image.getUniqueLabels();
+                for(Integer label : labels){
+                    if((component = ImageProcessing.SeparatableImage
+                                .findOneComponent(image,label)) != null) 
                     tabsPane.addTab(l.tr("componentImage"), new Canvas(component));
-                /*List<ImageComponent> comps = ImageProcessing.SeparatableImage
-                    .separateComponents(canvas.getImage(), Color.GREEN, 
-                            Color.BLUE, Color.RED);
-                comps.stream()
-                    .forEach(c->tabsPane.addTab(l.tr("componentImage"), 
-                            new Canvas(c)));*/
+                }
             }
         };
         process.execute();
