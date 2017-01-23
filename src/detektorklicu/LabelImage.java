@@ -24,12 +24,16 @@
 package detektorklicu;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -40,7 +44,7 @@ import java.util.stream.IntStream;
  */
 public class LabelImage extends BufferedImage{
 
-    private LabelImage(ColorModel cm, WritableRaster raster, boolean isRasterPremultiplied, Hashtable<?,?> properties) {
+    protected LabelImage(ColorModel cm, WritableRaster raster, boolean isRasterPremultiplied, Hashtable<?,?> properties) {
         super(cm,raster,isRasterPremultiplied,properties);
         labels = new int[getWidth()][getHeight()];
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel()
@@ -86,7 +90,7 @@ public class LabelImage extends BufferedImage{
     public int getLabel(int x, int y){return labels[x][y];}
     public void setLabel(int x, int y, int v){labels[x][y]=v;}
     
-    public LabelImage getLabels(List<Color> colors){
+    public LabelImage getLabelsImage(List<Color> colors){
         // prepare IndexColorModel
         byte [] reds = new byte [colors.size()+1];
         byte [] greens = new byte [colors.size()+1];
@@ -117,10 +121,8 @@ public class LabelImage extends BufferedImage{
         
         return li;
     }
-    
-    //private void cosik(int i){}
-    
-    public List<Integer> getUniqueLabels(){
+        
+    public List<Integer> getLabelsList(){
         List<List<Integer>> inRow = new ArrayList<>(getWidth());
         
         IntStream.iterate(0, n->n+1).limit(getWidth())
@@ -145,5 +147,44 @@ public class LabelImage extends BufferedImage{
         return uniqueLabels;
     }
     
-    private final int [][] labels;
+    public void detectRegions(){
+        AreaDetector.detectRegions(this);
+    }
+    
+    public boolean hasRegions(){return regions!=null && !regions.isEmpty();}
+    
+    public void makeRegionsList(){
+        List<Integer> regionsLabels = getLabelsList();
+        regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
+        
+        regionsLabels.parallelStream().forEach(label->{
+            PointExtremes extremes = null;
+            int area = 0;
+            int xc = 0;
+            int yc = 0;
+                    
+            for(int x = 0; x<getWidth(); x++){
+                for(int y = 0; y<getHeight(); y++){
+                    if(getLabel(x, y) == label){
+                        Point p = new Point(x,y);
+                        xc += x; yc += y; // count centroid of the region
+                        area++; // surface of the region
+                        if(extremes == null) 
+                            extremes = new PointExtremes(p);
+                        extremes.checkExtremes(p);
+                    }
+                }
+            }
+            Point center = new Point(xc/area, yc/area);
+            if(extremes != null)
+                regions.add(new Region(label, area, extremes.getXmin(), 
+                        extremes.getYmin(), extremes.getXmin(), 
+                        extremes.getYmax(), center));
+        });
+    }
+    
+    public List<Region> getRegions() {return regions;}
+    
+    protected final int [][] labels;
+    protected List<Region> regions = null;
 }

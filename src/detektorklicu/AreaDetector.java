@@ -23,7 +23,6 @@
  */
 package detektorklicu;
 
-import com.sun.org.apache.xerces.internal.util.IntStack;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,14 +163,14 @@ public class AreaDetector {
     }
     
     private void agglomerateRegions(){
-        for(Point c : collisions){
+        collisions.forEach((c) -> {
             IntStream.iterate(0, i->i+1).limit(image.getWidth()).parallel()
                     .forEach(x->{
                         for(int y = 0; y < image.getHeight(); y++){
                             if(c.y == image.getLabel(x, y))
                                 image.setLabel(x, y, c.x);
                         }
-            });
-        }
+                    });
+        });
     }
 }

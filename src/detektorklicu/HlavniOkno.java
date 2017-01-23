@@ -27,6 +27,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -49,6 +50,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -203,7 +206,7 @@ public class HlavniOkno extends JFrame{
         List<Color> colors = new LinkedList<>();
         colors.add(Color.black);
         colors.add(Color.cyan);
-        colors.add(Color.darkGray);
+        // colors.add(Color.darkGray);
         colors.add(Color.gray);
         colors.add(Color.green);
         colors.add(Color.yellow);
@@ -238,42 +241,47 @@ public class HlavniOkno extends JFrame{
     }
     private void detecitonFloodFill4P(ActionEvent e){
         //ImageProcessing.floodFill(canvas.getImage(), 1, 1, Color.red);
-        process = new Process(": "+l.tr("detekceFloodFill")) {
+        process = new Process(": "+l.tr("detectionFloodFill")) {
 
             @Override
             public void action() {
-                canvas.setImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
+                addImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
             }
         };
         process.execute();
     }
     
     private void detectionScanline(ActionEvent e){
-        process = new Process(": "+l.tr("detekceScanLine")) {
+        process = new Process(": "+l.tr("detectionRegionLabel")) {
 
             @Override
             public void action() {
-                //ImageProcessing.scanlineFill(canvas.getImage(), 10, 10, Color.red);
                 if(canvas.getImage() instanceof LabelImage) 
-                    AreaDetector.detectRegions((LabelImage)canvas.getImage());
+                    ((LabelImage)canvas.getImage()).detectRegions();
             }
         };
         process.execute();
     }
     
     private void detectionErode(ActionEvent e){
-        process = new Process(": "+l.tr("detekceErode")) {
+        process = new Process(": "+l.tr("detectionRegions")) {
 
             @Override
             public void action() {
-                ImageProcessing.erode(canvas.getImage(), Color.red, Color.GREEN);
+                List<Region> regions = null;
+                if(canvas.getImage() instanceof LabelImage){
+                    LabelImage image = (LabelImage)canvas.getImage();
+                    image.makeRegionsList();
+                    if(image.hasRegions())
+                        regions = image.getRegions();
+                }
             }
         };
         process.execute();
     }
     
     private void detectionComponents(ActionEvent e){
-        process = new Process(": "+l.tr("detekceComponent")) {
+        process = new Process(": "+l.tr("detectionComponents")) {
 
             @Override
             public void action() {
@@ -282,7 +290,7 @@ public class HlavniOkno extends JFrame{
                     image = (LabelImage)canvas.getImage();
                 else return;
                 ImageComponent component;
-                List<Integer> labels = image.getUniqueLabels();
+                List<Integer> labels = image.getLabelsList();
                 for(Integer label : labels){
                     if((component = ImageProcessing.SeparatableImage
                                 .findOneComponent(image,label)) != null) 
@@ -295,7 +303,7 @@ public class HlavniOkno extends JFrame{
     
     private void toolShowLabels(ActionEvent e){
         LabelImage image = (LabelImage)canvas.getImage();
-        addImage(image.getLabels(LabelImage.getPallete()));
+        addImage(image.getLabelsImage(LabelImage.getPallete()));
     }
     
     /** setter pro obrazek do kresliciho panelu
@@ -308,8 +316,12 @@ public class HlavniOkno extends JFrame{
         mainMenu.enableDetection(canvas.isImageInside());
     }
     
-    private void disableCounting(boolean disable){
-        mainMenu.enableDetection(!disable);
+    private void checkPossibleActions(){
+        Object activeObj = tabsPane.getSelectedComponent();
+        boolean imageActions = activeObj instanceof Canvas;
+        boolean lablesActions = activeObj instanceof LabelImage;
+        //if()
+        //mainMenu.enab€leDetection(!disable);
     }
     
     abstract class Process extends SwingWorker<Void, Void>{
@@ -354,12 +366,12 @@ public class HlavniOkno extends JFrame{
         private final JMenuItem souborUlozit = new JMenuItem(l.tr("souborUlozit"));
         private final JMenuItem souborKonec = new JMenuItem(l.tr("souborKonec"));
         
-        private final JMenu detekceMenu = new JMenu(l.tr("detekceMenu"));
-        private final JMenuItem detekceDobarvi = new JMenuItem(l.tr("detekceDobarvi"));
-        private final JMenuItem detekceFloodFill = new JMenuItem(l.tr("detekceFloodFill"));
-        private final JMenuItem detekceScanLine = new JMenuItem(l.tr("detekceScanLine"));
-        private final JMenuItem detekceErode = new JMenuItem(l.tr("detekceErode"));
-        private final JMenuItem detekceComponent = new JMenuItem(l.tr("detekceComponent"));
+        private final JMenu detectionMenu = new JMenu(l.tr("detectionMenu"));
+        private final JMenuItem detectionTest = new JMenuItem(l.tr("detectionTest"));
+        private final JMenuItem detectionFloodFill = new JMenuItem(l.tr("detectionFloodFill"));
+        private final JMenuItem detectionRegionLabel = new JMenuItem(l.tr("detectionRegionLabel"));
+        private final JMenuItem detectionRegions = new JMenuItem(l.tr("detectionRegions"));
+        private final JMenuItem detectionComponents = new JMenuItem(l.tr("detectionComponents"));
         
         private final JMenu toolsMenu = new JMenu(l.tr("toolsMenu"));
         private final JMenuItem toolShowLabels = new JMenuItem(l.tr("toolShowLabels"));
@@ -382,7 +394,7 @@ public class HlavniOkno extends JFrame{
             okno.setJMenuBar(menuBar);
             
             menuBar.add(souborMenu);
-            menuBar.add(detekceMenu);
+            menuBar.add(detectionMenu);
             menuBar.add(toolsMenu);
             menuBar.add(napovedaMenu);
             
@@ -391,11 +403,11 @@ public class HlavniOkno extends JFrame{
             souborMenu.addSeparator();
             souborMenu.add(souborKonec);
             
-            detekceMenu.add(detekceDobarvi);
-            detekceMenu.add(detekceFloodFill);
-            detekceMenu.add(detekceScanLine);
-            detekceMenu.add(detekceErode);
-            detekceMenu.add(detekceComponent);
+            detectionMenu.add(detectionTest);
+            detectionMenu.add(detectionFloodFill);
+            detectionMenu.add(detectionRegionLabel);
+            detectionMenu.add(detectionRegions);
+            detectionMenu.add(detectionComponents);
             
             toolsMenu.add(toolShowLabels);
             toolShowLabels.setEnabled(false);
@@ -408,22 +420,22 @@ public class HlavniOkno extends JFrame{
         private void inicializujListenery(){
             souborOtevrit.addActionListener(HlavniOkno.this::openImage);
             souborUlozit.addActionListener(HlavniOkno.this::saveImage);
-            detekceDobarvi.addActionListener(HlavniOkno.this::detectionColorise);
-            detekceFloodFill.addActionListener(HlavniOkno.this::detecitonFloodFill4P);
-            detekceScanLine.addActionListener(HlavniOkno.this::detectionScanline);
-            detekceErode.addActionListener(HlavniOkno.this::detectionErode);
-            detekceComponent.addActionListener(HlavniOkno.this::detectionComponents);
+            detectionTest.addActionListener(HlavniOkno.this::detectionColorise);
+            detectionFloodFill.addActionListener(HlavniOkno.this::detecitonFloodFill4P);
+            detectionRegionLabel.addActionListener(HlavniOkno.this::detectionScanline);
+            detectionRegions.addActionListener(HlavniOkno.this::detectionErode);
+            detectionComponents.addActionListener(HlavniOkno.this::detectionComponents);
             toolShowLabels.addActionListener(HlavniOkno.this::toolShowLabels);
         }
         
         /** zablokuje nabidku detekce */
         public void disableImageActions(){
-            detekceMenu.setEnabled(false);
+            detectionMenu.setEnabled(false);
             souborUlozit.setEnabled(false);
         }
         /** odblokuje nabidku detekce */
         public void enableImageActions(){
-            detekceMenu.setEnabled(true);
+            detectionMenu.setEnabled(true);
             souborUlozit.setEnabled(true);
         }
         /** enables showLabel action in tools*/

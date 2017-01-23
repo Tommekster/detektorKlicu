@@ -312,7 +312,7 @@ public class ImageProcessing {
          * @return list of images containing components
          */
         public List<ImageComponent> separateComponents(){
-            List<Integer> labels = image.getUniqueLabels();
+            List<Integer> labels = image.getLabelsList();
             List<ImageComponent> components = new ArrayList<>(labels.size());
 
             IntStream.iterate(0, n->n+1)
