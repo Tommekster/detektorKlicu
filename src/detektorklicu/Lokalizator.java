@@ -71,7 +71,7 @@ public class Lokalizator {
                     lokal = new Locale(nastaveni[0], nastaveni[1]);
                     break;
                 default:
-                    throw new IllegalArgumentException("Špatný počet parametrů programu");
+                    throw new IllegalArgumentException("Illegal argument");
             }
         }
         catch(IllegalArgumentException | NullPointerException ex)

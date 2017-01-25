@@ -24,6 +24,7 @@
 package detektorklicu;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -48,13 +49,16 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.SwingWorker;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
 
 /** Hlavni okno
  * Hlavni okno programu Deterktor klicu
@@ -67,7 +71,7 @@ public class HlavniOkno extends JFrame{
     
     private Canvas canvas = null; //new Canvas();
     private Process process = null;
-    private WorkerDialog workerDialog;
+    //private WorkerDialog workerDialog;
     
     public HlavniOkno(){
         super();
@@ -306,6 +310,40 @@ public class HlavniOkno extends JFrame{
         addImage(image.getLabelsImage(LabelImage.getPallete()));
     }
     
+    private void toolRegionsList(ActionEvent e) {
+        LabelImage image = (LabelImage)canvas.getImage();
+        if(image.hasRegions()){
+            JTable table = new JTable(new RegionsTableModel(image.getRegions()));
+            //table.getColorModel().getColorSpace()
+            //table.getColumnModel().getColumn(WIDTH)
+            tabsPane.add(l.tr("regionsTable"), new JScrollPane(table));
+            table.getColumnModel().getColumn(0).setWidth(30);
+            table.getColumnModel().getColumn(3).setWidth(60);
+        }
+    }
+    
+    private void toolRegionDetail(ActionEvent e) {
+        Component c = tabsPane.getSelectedComponent();
+        if(c instanceof JScrollPane){
+           Component table = ((JScrollPane)c).getViewport().getView();
+           if(table instanceof JTable) {
+               int row = ((JTable) table).getSelectedRow();
+               if(row >= 0){
+                   TableModel model = ((JTable) table).getModel();
+                   if(model instanceof RegionsTableModel){
+                       Region region = ((RegionsTableModel) model).getRegionAt(row);
+                       if(!region.hasEllipse()) region.findBoundingEllipse();
+                       StringBuilder sb = new StringBuilder();
+                       sb.append("thetha=").append(region.getOrientation()).append("\n")
+                               .append("a=").append(region.getHalfAxisA()).append("\n")
+                               .append("b=").append(region.getHalfAxisB()).append("\n");
+                       JOptionPane.showMessageDialog(this, sb.toString(), "Datail", JOptionPane.INFORMATION_MESSAGE);
+                   }
+               }
+           }
+        }
+    }
+    
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
@@ -375,6 +413,8 @@ public class HlavniOkno extends JFrame{
         
         private final JMenu toolsMenu = new JMenu(l.tr("toolsMenu"));
         private final JMenuItem toolShowLabels = new JMenuItem(l.tr("toolShowLabels"));
+        private final JMenuItem toolRegionsList = new JMenuItem(l.tr("toolRegionsList"));
+        private final JMenuItem toolRegionDetail = new JMenuItem(l.tr("toolRegionDetail"));
         
         private final JMenu napovedaMenu = new JMenu(l.tr("napovedaMenu"));
         private final JMenuItem napovedaAbout = new JMenuItem(l.tr("napovedaAbout"));
@@ -411,6 +451,8 @@ public class HlavniOkno extends JFrame{
             
             toolsMenu.add(toolShowLabels);
             toolShowLabels.setEnabled(false);
+            toolsMenu.add(toolRegionsList);
+            toolsMenu.add(toolRegionDetail);
             
             napovedaMenu.add(napovedaAbout);
             
@@ -426,6 +468,8 @@ public class HlavniOkno extends JFrame{
             detectionRegions.addActionListener(HlavniOkno.this::detectionErode);
             detectionComponents.addActionListener(HlavniOkno.this::detectionComponents);
             toolShowLabels.addActionListener(HlavniOkno.this::toolShowLabels);
+            toolRegionsList.addActionListener(HlavniOkno.this::toolRegionsList);
+            toolRegionDetail.addActionListener(HlavniOkno.this::toolRegionDetail);
         }
         
         /** zablokuje nabidku detekce */

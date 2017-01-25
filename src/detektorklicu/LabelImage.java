@@ -36,6 +36,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -156,6 +157,7 @@ public class LabelImage extends BufferedImage{
     public void makeRegionsList(){
         List<Integer> regionsLabels = getLabelsList();
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
+        boolean disable1pixel = true;
         
         regionsLabels.parallelStream().forEach(label->{
             PointExtremes extremes = null;
@@ -176,9 +178,9 @@ public class LabelImage extends BufferedImage{
                 }
             }
             Point center = new Point(xc/area, yc/area);
-            if(extremes != null)
-                regions.add(new Region(label, area, extremes.getXmin(), 
-                        extremes.getYmin(), extremes.getXmin(), 
+            if(extremes != null && (area > 1 || !disable1pixel))
+                regions.add(new Region(this,label, area, extremes.getXmin(), 
+                        extremes.getYmin(), extremes.getXmax(), 
                         extremes.getYmax(), center));
         });
     }
