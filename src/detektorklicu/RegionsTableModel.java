@@ -24,6 +24,7 @@
 package detektorklicu;
 
 import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
@@ -73,7 +74,7 @@ public class RegionsTableModel extends AbstractTableModel {
             case 2:
                 return region.getBoundings();
             case 3:
-                return new Point(region.getCenter()){
+                return new Point((int)region.getCenter().getX(),(int)region.getCenter().getY()){
                     @Override
                     public String toString(){
                         StringBuilder sb = new StringBuilder();

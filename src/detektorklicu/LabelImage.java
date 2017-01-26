@@ -25,6 +25,7 @@ package detektorklicu;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
@@ -177,7 +178,7 @@ public class LabelImage extends BufferedImage{
                     }
                 }
             }
-            Point center = new Point(xc/area, yc/area);
+            Point2D center = new Point2D.Double((double)xc/area, (double)yc/area);
             if(extremes != null && (area > 1 || !disable1pixel))
                 regions.add(new Region(this,label, area, extremes.getXmin(), 
                         extremes.getYmin(), extremes.getXmax(), 

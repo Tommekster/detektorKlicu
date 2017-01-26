@@ -337,7 +337,8 @@ public class HlavniOkno extends JFrame{
                        sb.append("thetha=").append(region.getOrientation()).append("\n")
                                .append("a=").append(region.getHalfAxisA()).append("\n")
                                .append("b=").append(region.getHalfAxisB()).append("\n");
-                       JOptionPane.showMessageDialog(this, sb.toString(), "Datail", JOptionPane.INFORMATION_MESSAGE);
+                       JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
+                       region.drawBoundingRectangle(Color.blue);
                    }
                }
            }
