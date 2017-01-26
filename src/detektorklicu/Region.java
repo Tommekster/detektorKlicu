@@ -77,7 +77,7 @@ public class Region {
             double xPowered = Math.pow((double)x-xc, p);
             for(int y : this.getBoundings().getVerticalIntStream().toArray()) {
                 if(parent.getLabel(x, y) == label){
-                    sumInCol += xPowered * Math.pow((double)y-xc, q);
+                    sumInCol += xPowered * Math.pow((double)y-yc, q);
                     
                 }
             }

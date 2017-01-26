@@ -389,6 +389,7 @@ public class HlavniOkno extends JFrame{
         @Override
         public void done(){
             HlavniOkno.this.repaint();
+            HlavniOkno.this.checkPossibleActions();
             workerDialog.setVisible(false);
         }
     }
