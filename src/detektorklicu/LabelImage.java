@@ -186,7 +186,10 @@ public class LabelImage extends BufferedImage{
         });
     }
     
-    public List<Region> getRegions() {return regions;}
+    public List<Region> getRegions() {
+        if(!hasRegions()) makeRegionsList();
+        return regions;
+    }
     
     protected final int [][] labels;
     protected List<Region> regions = null;
