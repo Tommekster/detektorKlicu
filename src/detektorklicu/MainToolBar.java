@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2016 zikmuto2.
+ * Copyright 2017 Acer.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,45 @@
  */
 package detektorklicu;
 
-/** Hlavní třída programu Detektor klíčů
- * 
- * @author zikmuto2
- */
-public class DetektorKlicu {
+import java.awt.event.ActionListener;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import javax.swing.JButton;
+import javax.swing.JToolBar;
 
-    /** Zobrazí hlavní okno
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        MainWindow okno = new MainWindow();
-        okno.setVisible(true);
+/**
+ * 
+ * @author Acer
+ */
+
+    
+class MainToolBar{
+    MainWindow window;
+
+    private final JToolBar toolBar = new JToolBar();
+    private final JButton btnOpen = new JButton();
+
+    public MainToolBar(MainWindow win){
+        window = win;
+        initialization();
     }
     
+    private void initialization(){
+        toolBar.setFloatable(false);
+
+    }
+
+    private void addButton(JButton btn, String iconName, String textBundle, ActionListener action){
+        btn.setIcon(icons.Icons.getIcon(iconName));
+        try{
+            btn.setToolTipText(ResourceBundle.getBundle("texts/MainToolBar").getString(textBundle));
+        }catch(MissingResourceException e){
+            btn.setToolTipText(textBundle);
+        }
+        btn.addActionListener(action);
+        toolBar.add(btn);
+    }
+    private void addSeparator(){
+        toolBar.addSeparator();
+    }
 }

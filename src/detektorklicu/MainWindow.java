@@ -28,21 +28,21 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusAdapter;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
-import java.awt.image.Raster;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -52,9 +52,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JToolBar;
 import javax.swing.SwingWorker;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -64,29 +63,145 @@ import javax.swing.table.TableModel;
  * Hlavni okno programu Deterktor klicu
  * @author zikmuto2
  */
-public class HlavniOkno extends JFrame{
+public class MainWindow extends JFrame{
     private static final Lokalizator l = Lokalizator.getLokalizator();
-    private final MainMenu mainMenu = new MainMenu();
+    private final MainMenu mainMenu = new MainMenu(this);
     private final JTabbedPane tabsPane = new JTabbedPane();
     
     //private Canvas canvas = null; //new Canvas();
     private Process process = null;
     //private WorkerDialog workerDialog;
     
-    public HlavniOkno(){
+    public MainWindow(){
         super();
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        inicializace();
+        initialization();
+    }
+    
+    /** opens an image for detection */
+    public void fileNew(ActionEvent e){
+        // TODO
+    }
+    
+    /** opens saved detection file */
+    public void fileOpen(ActionEvent e){
+        // TODO
+    }
+    
+    /** saves detection file */
+    public void fileSave(ActionEvent e){
+        // TODO
+    }
+    
+    /** exports source image */
+    public void fileExportOriginal(ActionEvent e){
+        // TODO
+    }
+    
+    /** exports labels */
+    public void fileExportLabels(ActionEvent e){
+        // TODO
+    }
+    
+    /** exports regions list */
+    public void fileExportRegionsList(ActionEvent e){
+        // TODO
+    }
+    
+    /** exports regions list */
+    public void fileQuit(ActionEvent e){
+        // TODO
+    }
+    
+    public void detectRegions(ActionEvent e){
+        Canvas canvas = getCanvas();
+        process = new Process(l.tr("evalDetectRegions")) {
+
+            @Override
+            public void action() {
+                // Imabe should be label image with separated background
+                // if it is not then we separate the background
+                if(!(canvas.getImage() instanceof LabelImage)) {
+                    canvas.setImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
+                }
+                
+                // background is separated, regions can be denoted
+                ((LabelImage)canvas.getImage()).detectRegions();
+                
+            }
+        };
+        process.execute();
+    }
+    
+    
+    public void toolShowLabels(ActionEvent e){
+        LabelImage image = (LabelImage)getImage();
+        addImage(image.getLabelsImage(LabelImage.getPallete()));
+    }
+    
+    public void toolRegionsList(ActionEvent e) {
+        LabelImage image = (LabelImage)getImage();
+        process = new Process(l.tr("evalToolRegionsList")) {
+
+            @Override
+            public void action() {
+                addRegionsTable(image.getRegions());
+            }
+        };
+        process.execute();
+    }
+    
+    public void toolShowRegionsBounds(ActionEvent e){
+        LabelImage image = (LabelImage) getImage();
+        process = new Process(l.tr("evalToolShowRegionsBounds")) {
+
+            @Override
+            public void action() {
+                List<Region> regions = image.getRegions();
+                regions.parallelStream().forEach(region->{
+                    region.drawBoundingRectangle(Color.blue);
+                    MainWindow.this.repaint();
+                });
+            }
+        };
+        process.execute();
+    }
+    
+    public void toolRegionDetail(ActionEvent e) {
+        Component c = tabsPane.getSelectedComponent();
+        if(c instanceof JScrollPane){
+           Component table = ((JScrollPane)c).getViewport().getView();
+           if(table instanceof JTable) {
+               int row = ((JTable) table).getSelectedRow();
+               if(row >= 0){
+                   TableModel model = ((JTable) table).getModel();
+                   if(model instanceof RegionsTableModel){
+                       Region region = ((RegionsTableModel) model).getRegionAt(row);
+                       if(!region.hasEllipse()) region.findBoundingEllipse();
+                       StringBuilder sb = new StringBuilder();
+                       sb.append("thetha=").append(region.getOrientation()).append("\n")
+                               .append("a=").append(region.getHalfAxisA()).append("\n")
+                               .append("b=").append(region.getHalfAxisB()).append("\n");
+                       JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
+                       region.drawBoundingRectangle(Color.blue);
+                   }
+               }
+           }
+        }
+    }
+    
+    public void helpAbout(ActionEvent e){
+        // TODO
     }
 
     /** Inicializace okna 
      * nastavi rozmery, titulku a eventy oknu
      */
-    private void inicializace() {
-        int vyska = 300;
-        int sirka = 400;
-        Dimension obrazovka = Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((obrazovka.width - sirka)/2, (obrazovka.height - vyska)/2, sirka, vyska);
+    private void initialization() {
+        int height = 450;
+        int width = 600;
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        setBounds((screen.width - width)/2, (screen.height - height)/2, width, height);
         setTitle(l.tr("mainWindowTitle"));
         add(tabsPane);
         checkPossibleActions();
@@ -271,82 +386,6 @@ public class HlavniOkno extends JFrame{
         repaint();
     }
     
-    private void detectRegions(ActionEvent e){
-        Canvas canvas = getCanvas();
-        process = new Process(l.tr("evalDetectRegions")) {
-
-            @Override
-            public void action() {
-                // Imabe should be label image with separated background
-                // if it is not then we separate the background
-                if(!(canvas.getImage() instanceof LabelImage)) {
-                    canvas.setImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
-                }
-                
-                // background is separated, regions can be denoted
-                ((LabelImage)canvas.getImage()).detectRegions();
-                
-            }
-        };
-        process.execute();
-    }
-    
-    private void toolShowLabels(ActionEvent e){
-        LabelImage image = (LabelImage)getImage();
-        addImage(image.getLabelsImage(LabelImage.getPallete()));
-    }
-    
-    private void toolRegionsList(ActionEvent e) {
-        LabelImage image = (LabelImage)getImage();
-        process = new Process(l.tr("evalToolRegionsList")) {
-
-            @Override
-            public void action() {
-                addRegionsTable(image.getRegions());
-            }
-        };
-        process.execute();
-    }
-    
-    private void toolShowRegionsBounds(ActionEvent e){
-        LabelImage image = (LabelImage) getImage();
-        process = new Process(l.tr("evalToolShowRegionsBounds")) {
-
-            @Override
-            public void action() {
-                List<Region> regions = image.getRegions();
-                regions.parallelStream().forEach(region->{
-                    region.drawBoundingRectangle(Color.blue);
-                    HlavniOkno.this.repaint();
-                });
-            }
-        };
-        process.execute();
-    }
-    
-    private void toolRegionDetail(ActionEvent e) {
-        Component c = tabsPane.getSelectedComponent();
-        if(c instanceof JScrollPane){
-           Component table = ((JScrollPane)c).getViewport().getView();
-           if(table instanceof JTable) {
-               int row = ((JTable) table).getSelectedRow();
-               if(row >= 0){
-                   TableModel model = ((JTable) table).getModel();
-                   if(model instanceof RegionsTableModel){
-                       Region region = ((RegionsTableModel) model).getRegionAt(row);
-                       if(!region.hasEllipse()) region.findBoundingEllipse();
-                       StringBuilder sb = new StringBuilder();
-                       sb.append("thetha=").append(region.getOrientation()).append("\n")
-                               .append("a=").append(region.getHalfAxisA()).append("\n")
-                               .append("b=").append(region.getHalfAxisB()).append("\n");
-                       JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
-                       region.drawBoundingRectangle(Color.blue);
-                   }
-               }
-           }
-        }
-    }
-    
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
@@ -370,7 +409,7 @@ public class HlavniOkno extends JFrame{
         WorkerDialog workerDialog;
         
         public Process(String title){
-            workerDialog = new WorkerDialog(HlavniOkno.this,title) {
+            workerDialog = new WorkerDialog(MainWindow.this,title) {
                 @Override
                 public void cancelJob() {
                     cancel(true);
@@ -388,104 +427,9 @@ public class HlavniOkno extends JFrame{
         
         @Override
         public void done(){
-            HlavniOkno.this.repaint();
-            HlavniOkno.this.checkPossibleActions();
+            MainWindow.this.repaint();
+            MainWindow.this.checkPossibleActions();
             workerDialog.setVisible(false);
-        }
-    }
-    
-    /** Hlavni nabidka
-     * vnorena trida generujici a obsluhujici hlavni nabidku okna
-     */
-    class MainMenu{
-        /** Reference na rodice hlavni nabidky */
-        HlavniOkno okno;
-        
-        private final JMenuBar menuBar = new JMenuBar();
-        
-        private final JMenu souborMenu = new JMenu(l.tr("souborMenu"));
-        private final JMenuItem souborOtevrit = new JMenuItem(l.tr("souborOtevrit"));
-        private final JMenuItem souborUlozit = new JMenuItem(l.tr("souborUlozit"));
-        private final JMenuItem souborKonec = new JMenuItem(l.tr("souborKonec"));
-        
-        private final JMenu detectionMenu = new JMenu(l.tr("detectionMenu"));
-        private final JMenuItem detectionTest = new JMenuItem(l.tr("detectionTest"));
-        private final JMenuItem detectionRegions = new JMenuItem(l.tr("detectionRegions"));
-        //private final JMenuItem detectionRegionLabel = new JMenuItem(l.tr("detectionRegionLabel"));
-        //private final JMenuItem detectionComponents = new JMenuItem(l.tr("detectionComponents"));
-        
-        private final JMenu toolsMenu = new JMenu(l.tr("toolsMenu"));
-        private final JMenuItem toolShowLabels = new JMenuItem(l.tr("toolShowLabels"));
-        private final JMenuItem toolRegionsList = new JMenuItem(l.tr("toolRegionsList"));
-        private final JMenuItem toolShowRegionsBounds = new JMenuItem(l.tr("toolShowRegionsBounds"));
-        private final JMenuItem toolRegionDetail = new JMenuItem(l.tr("toolRegionDetail"));
-        
-        private final JMenu napovedaMenu = new JMenu(l.tr("napovedaMenu"));
-        private final JMenuItem napovedaAbout = new JMenuItem(l.tr("napovedaAbout"));
-        
-        /** Konstruktor hlavni nabidky
-         * vezme si okdkaz na okno a inicializuje obsah hlavni nabidky
-         * @param o odkaz na hlavni okno
-         */
-        public MainMenu(){
-            okno = HlavniOkno.this;
-            this.inicializace();
-            this.inicializujListenery();
-        }
-
-        /** Propoji polozky menu s nabidkou a vlozi ji do okna */
-        private void inicializace() {
-            okno.setJMenuBar(menuBar);
-            
-            menuBar.add(souborMenu);
-            menuBar.add(detectionMenu);
-            menuBar.add(toolsMenu);
-            menuBar.add(napovedaMenu);
-            
-            souborMenu.add(souborOtevrit);
-            souborMenu.add(souborUlozit);
-            souborMenu.addSeparator();
-            souborMenu.add(souborKonec);
-            
-            detectionMenu.add(detectionTest);
-            detectionMenu.add(detectionRegions);
-            //detectionMenu.add(detectionRegionLabel);
-            //detectionMenu.add(detectionComponents);
-            
-            toolsMenu.add(toolShowLabels);
-            toolsMenu.add(toolRegionsList);
-            toolsMenu.add(toolShowRegionsBounds);
-            toolsMenu.addSeparator();
-            toolsMenu.add(toolRegionDetail);
-            
-            napovedaMenu.add(napovedaAbout);
-        }
-        
-        private void inicializujListenery(){
-            souborOtevrit.addActionListener(HlavniOkno.this::openImage);
-            souborUlozit.addActionListener(HlavniOkno.this::saveImage);
-            detectionTest.addActionListener(HlavniOkno.this::detectionTest);
-            detectionRegions.addActionListener(HlavniOkno.this::detectRegions);
-            //detectionRegionLabel.addActionListener(HlavniOkno.this::detectionScanline);
-            //detectionComponents.addActionListener(HlavniOkno.this::detectionComponents);
-            toolShowLabels.addActionListener(HlavniOkno.this::toolShowLabels);
-            toolRegionsList.addActionListener(HlavniOkno.this::toolRegionsList);
-            toolShowRegionsBounds.addActionListener(HlavniOkno.this::toolShowRegionsBounds);
-            toolRegionDetail.addActionListener(HlavniOkno.this::toolRegionDetail);
-        }
-        
-        /** odblokuje nabidku detekce */
-        public void enableImageActions(boolean b){
-            detectionMenu.setEnabled(b);
-            souborUlozit.setEnabled(b);
-        }
-        public void enableLabelImageActions(boolean b){
-            toolShowLabels.setEnabled(b);
-            toolRegionsList.setEnabled(b);
-            toolShowRegionsBounds.setEnabled(b);
-        }
-        public void enableRegionListActions(boolean b){
-            toolRegionDetail.setEnabled(b);
         }
     }
 }

@@ -85,7 +85,7 @@ public class Lokalizator {
                     JOptionPane.INFORMATION_MESSAGE);
             lokal = Locale.getDefault();
         }
-        zdroj = ResourceBundle.getBundle("texty.texty", lokal);
+        zdroj = ResourceBundle.getBundle("texts.texty", lokal);
         numberFormat = NumberFormat.getNumberInstance(lokal);
         numberFormat.setMaximumFractionDigits(15);
         desetinna = (new DecimalFormatSymbols(lokal)).getDecimalSeparator();
