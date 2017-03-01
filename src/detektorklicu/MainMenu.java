@@ -48,6 +48,11 @@ class MainMenu{
     private final JMenuItem fileOpen = new JMenuItem();
     private final JMenuItem fileSave = new JMenuItem();
     private final JMenuItem fileQuit = new JMenuItem();
+    
+    private final JMenu exportMenu = new JMenu();
+    private final JMenuItem exportOriginal = new JMenuItem();
+    private final JMenuItem exportLabels = new JMenuItem();
+    private final JMenuItem exportRegions = new JMenuItem();
 
     private final JMenu detectionMenu = new JMenu();
     private final JMenuItem detectionTest = new JMenuItem();
@@ -79,9 +84,15 @@ class MainMenu{
         window.setJMenuBar(menuBar);
 
         addMenu(fileMenu);
-        addMenuItem(fileNew, (e) -> window.fileNew(e));
+        //addMenuItem(fileNew, (e) -> window.fileNew(e));
         addMenuItem(fileOpen, e->window.fileOpen(e));
         addMenuItem(fileSave, e->window.fileSave(e));
+        addMenuItem(exportMenu, null);
+        lastAddedMenu = exportMenu;
+        addMenuItem(exportOriginal, e->window.fileExportOriginal(e));
+        addMenuItem(exportLabels, e->window.fileExportLabels(e));
+        addMenuItem(exportRegions, e->window.fileExportRegionsList(e));
+        lastAddedMenu = fileMenu;
         addSeparator();
         addMenuItem(fileQuit,e->window.fileQuit(e));
         
@@ -140,7 +151,7 @@ class MainMenu{
         }catch(MissingResourceException e){
             item.setText(textBundle);
         }
-        item.addActionListener(action);
+        if(action != null) item.addActionListener(action);
     }
     
     private void addMenuItem(JMenuItem item, ActionListener action){

@@ -87,6 +87,7 @@ public class MainWindow extends JFrame{
     /** opens saved detection file */
     public void fileOpen(ActionEvent e){
         // TODO
+        openImage(e);
     }
     
     /** saves detection file */
