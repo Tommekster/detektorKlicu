@@ -81,6 +81,7 @@ public class MainWindow extends JFrame{
     /** opens an image for detection */
     public void fileNew(ActionEvent e){
         // TODO
+        openImage(e);
     }
     
     /** opens saved detection file */
@@ -91,6 +92,7 @@ public class MainWindow extends JFrame{
     /** saves detection file */
     public void fileSave(ActionEvent e){
         // TODO
+        saveImage(e);
     }
     
     /** exports source image */

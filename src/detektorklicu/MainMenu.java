@@ -95,28 +95,10 @@ class MainMenu{
         addSeparator();
         addMenuItem(toolRegionDetail, e->window.toolRegionDetail(e));
         
-        /*menuBar.add(fileMenu);
-        menuBar.add(detectionMenu);
-        menuBar.add(toolsMenu);
-        menuBar.add(helpMenu);
-
-        fileMenu.add(fileOpen);
-        fileMenu.add(fileSave);
-        fileMenu.addSeparator();
-        fileMenu.add(fileQuit);
-
-        detectionMenu.add(detectionTest);
-        detectionMenu.add(detectionRegions);
-        //detectionMenu.add(detectionRegionLabel);
-        //detectionMenu.add(detectionComponents);
-
-        toolsMenu.add(toolShowLabels);
-        toolsMenu.add(toolRegionsList);
-        toolsMenu.add(toolShowRegionsBounds);
-        toolsMenu.addSeparator();
-        toolsMenu.add(toolRegionDetail);
-
-        helpMenu.add(helpAbout);*/
+        
+        addMenu(helpMenu);
+        addMenuItem(helpAbout, e->window.helpAbout(e));
+        
     }
 
     private void initializeListeners(){
@@ -180,7 +162,7 @@ class MainMenu{
     
     String getFieldName(Object field){
         try {
-            for(Field f : this.getClass().getFields()) {
+            for(Field f : this.getClass().getDeclaredFields()) {
                     if(f.get(this) == field) {
                         return f.getName();
                     }
