@@ -23,6 +23,8 @@
  */
 package detektorklicu;
 
+import java.awt.Dimension;
+
 /**
  *
  * @author Acer
@@ -35,9 +37,11 @@ public class DetectionPanel extends javax.swing.JPanel {
      */
     public DetectionPanel(Detection detection) {
         this.detection = detection;
+        this.canvas = new Canvas(detection.getOriginal());
         initComponents();
-        imageScrollPane.setViewportView(new Canvas(detection.getOriginal()));
-        splitPane.setDividerLocation(splitPane.getHeight());
+        
+        imageScrollPane.setViewportView(canvas);
+        
     }
 
     /**
@@ -51,13 +55,25 @@ public class DetectionPanel extends javax.swing.JPanel {
 
         splitPane = new javax.swing.JSplitPane();
         tableScrollPane = new javax.swing.JScrollPane();
-        regionsPane = new javax.swing.JTable();
+        regionsTable = new javax.swing.JTable();
         imageScrollPane = new javax.swing.JScrollPane();
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                formComponentResized(evt);
+            }
+        });
 
         splitPane.setDividerLocation(splitPane.getHeight());
         splitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
-        regionsPane.setModel(new javax.swing.table.DefaultTableModel(
+        tableScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                tableScrollPaneComponentResized(evt);
+            }
+        });
+
+        regionsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {},
                 {},
@@ -68,7 +84,7 @@ public class DetectionPanel extends javax.swing.JPanel {
 
             }
         ));
-        tableScrollPane.setViewportView(regionsPane);
+        tableScrollPane.setViewportView(regionsTable);
 
         splitPane.setBottomComponent(tableScrollPane);
         splitPane.setLeftComponent(imageScrollPane);
@@ -85,14 +101,52 @@ public class DetectionPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    private void formComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentResized
+        if(tableHidden) hideTable();
+    }//GEN-LAST:event_formComponentResized
+
+    private void tableScrollPaneComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_tableScrollPaneComponentResized
+        tableHidden = false;
+        fillTable();
+    }//GEN-LAST:event_tableScrollPaneComponentResized
+
+    public void hideTable() {
+        tableHidden = true;
+        splitPane.setDividerLocation(getHeight());
+    }
     
+    public void showTable() {
+        tableHidden = false;
+        splitPane.setDividerLocation(getHeight()/3);
+        fillTable();
+    }
+    
+    public void fillTable(){
+        regionsTable.setModel(detection.getImage().getRegionsTableModel());
+        
+        regionsTable.getColumnModel().getColumn(0).setWidth(30);
+        regionsTable.getColumnModel().getColumn(3).setWidth(60);
+    }
+    
+    public void viewOriginalSize() {
+        Dimension d = new Dimension(detection.getOriginal().getWidth(), detection.getOriginal().getHeight());
+        canvas.setPreferredSize(d);
+        canvas.setSize(d);
+    }
+    
+    public void viewScalledSize() {
+        canvas.setPreferredSize(null);
+        canvas.setSize(imageScrollPane.getSize());
+    }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane imageScrollPane;
-    private javax.swing.JTable regionsPane;
+    private javax.swing.JTable regionsTable;
     private javax.swing.JSplitPane splitPane;
     private javax.swing.JScrollPane tableScrollPane;
     // End of variables declaration//GEN-END:variables
 
     private Detection detection;
+    private boolean tableHidden = true;
+    private Canvas canvas;
 }
