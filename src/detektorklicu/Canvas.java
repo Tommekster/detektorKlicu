@@ -25,7 +25,9 @@ package detektorklicu;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Polygon;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import javax.swing.JPanel;
 
 /** Canvas panel
@@ -34,6 +36,7 @@ import javax.swing.JPanel;
  */
 class Canvas extends JPanel{
     private BufferedImage image = null;
+    private List<Polygon> polygons;
     public void setImage(BufferedImage i){image=i;}
     public BufferedImage getImage() {return image;}
     public boolean isImageInside(){return image != null;}
@@ -53,12 +56,13 @@ class Canvas extends JPanel{
         if(image != null){
             // fit image in the box
             Dimension d = this.getSize();
-            float rs = d.width/d.height;
+            float rs = (float)d.width/d.height;
             int w = image.getWidth();
             int h = image.getHeight();
-            float ri = w/h;
+            float ri = (float)w/h;
 
             if(rs > ri) { // width is smaller
+                
                 w = w*d.height/h;
                 h = d.height;
             }else{ // height is smaller
@@ -67,8 +71,10 @@ class Canvas extends JPanel{
             }
             int top = (d.height - h)/2;
             int left = (d.width - w)/2;
+            
             // Draw image
             g.drawImage(image, left, top, w, h, this);
+            
         }
         if(image instanceof ImageComponent){
             ImageComponent im = (ImageComponent)image;
