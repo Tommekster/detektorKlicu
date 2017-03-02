@@ -43,31 +43,17 @@ import java.util.Queue;
  */
 public class ImageProcessing {
     static int d;
-    /** test barvy
-     * bude vhodne odstranit
-     * @return 
-     */
-    private static boolean testBarvy(int rgb1, int rgb2){
-        Color c = new Color(rgb1);
-        Color č = new Color(rgb2);
-        
-        /*int*/ d = abs(c.getRed()-č.getRed()) 
-                + abs(c.getGreen()-č.getGreen()) 
-                + abs(c.getBlue()-č.getBlue());
-        
-        return d < 10;
-    }
+    
+    
     /** Flood-fill background 
      * fills background with the given color. It uses parallelization.
      * @param image image to fill
      * @param color the color of the flood
      * @return 
      */
-    public static LabelImage floodFillBackground(BufferedImage image, Color color){
+    public static void floodFillSeparateBackground(LabelImage image){
         int h = image.getHeight();
         int w = image.getWidth();
-        
-        LabelImage labelled = LabelImage.createLabelImage(image);
         
         List<Point> startPoints = new LinkedList<>();
         startPoints.add(new Point(0,0));
@@ -80,18 +66,32 @@ public class ImageProcessing {
         startPoints.add(new Point(w-1,h/2));
         startPoints.add(new Point(w/2,h-1));
         
-        startPoints.stream().parallel().forEach(p->floodFill(labelled, p.x, p.y, color));
-        
-        return labelled;
+        startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y));
     }
-    /** FloodFill 
+    
+    /** test barvy
+     * bude vhodne odstranit
+     * @return 
+     */
+    private static boolean colorTest(int rgb1, int rgb2){
+        Color c = new Color(rgb1);
+        Color č = new Color(rgb2);
+        
+        /*int*/ d = abs(c.getRed()-č.getRed()) 
+                + abs(c.getGreen()-č.getGreen()) 
+                + abs(c.getBlue()-č.getBlue());
+        
+        return d < 10;
+    }
+    
+    /** FloodFillColor
      * @param image image to fill
      * @param xi x-coordinate where flood starts
      * @param yi y-coordinate where flood starts
      * @param color the color of the flood
      * @return 
      */
-    public static void floodFill(LabelImage image, int xi, int yi, Color color){
+    public static void floodFillColor(LabelImage image, int xi, int yi, Color color){
         //Deque<Point> stack = new ArrayDeque<>();
         Queue<Point> queue = new ArrayDeque<>();
         queue.clear();
@@ -116,93 +116,49 @@ public class ImageProcessing {
             
             image.setRGB(x, y, nRGB);
             image.setLabel(x, y, 0);
-            if(y>0 && testBarvy(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
-            if(x<(w-1) && testBarvy(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
-            if(y<(h-1) && testBarvy(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
-            if(x>0 && testBarvy(image.getRGB(x-1, y), oRGB)) queue.add(new Point(x-1, y));
+            if(y>0 && colorTest(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
+            if(x<(w-1) && colorTest(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
+            if(y<(h-1) && colorTest(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
+            if(x>0 && colorTest(image.getRGB(x-1, y), oRGB)) queue.add(new Point(x-1, y));
         }
     }
     
-    /** scanline flood fill 
+    /** FloodFill 
      * @param image image to fill
      * @param xi x-coordinate where flood starts
      * @param yi y-coordinate where flood starts
      * @param color the color of the flood
      * @return 
      */
-    public static void scanlineFill(BufferedImage image, int xi, int yi, Color color){
-        Deque<Point> stack = new ArrayDeque<>();
-        /* Napoveda: http://lodev.org/cgtutor/floodfill.html */
-        stack.clear();
+    public static void floodFill(LabelImage image, int xi, int yi){
+        //Deque<Point> stack = new ArrayDeque<>();
+        Queue<Point> queue = new ArrayDeque<>();
+        queue.clear();
         
         int x = xi;
         int y = yi;
-        int nRGB = color.getRGB();
-        int oRGB = image.getRGB(xi,yi);
+        int oRGB;
         int w = image.getWidth();
         int h = image.getHeight();
-        boolean spanAbove, spanBelow;
         
-        stack.push(new Point(x, y));
+        queue.add(new Point(x, y));
         
-        while(!stack.isEmpty()){
+        while(!queue.isEmpty()){
             // starts \w point at top of the stack
-            Point p = stack.pop();
+            Point p = queue.poll();
             x = p.x;
             y = p.y;
-            System.out.println(x+","+y);
-            if(image.getRGB(x, y) == nRGB) continue;
-            // the colors of the points in the stack are appropriate
+            //System.out.println(x+","+y);
+            if(image.getLabel(x, y) == 0) continue;
             oRGB = image.getRGB(x,y);
-            // at first reverse to posible begin
-            while(x >= 0 && testBarvy(image.getRGB(x, y),oRGB)) {
-                oRGB = image.getRGB(x,y);
-                //System.out.println(--x+","+y);
-                x--;
-            }
-            x++; // correct to do-while
-            spanAbove = spanBelow = false; // off flags
-            // for every appropriate point in the line ...
-            while(x < w && testBarvy(image.getRGB(x, y),oRGB)){
-                // take the old color
-                oRGB = image.getRGB(x,y);
-                // set up the new color
-                image.setRGB(x, y, nRGB);
-                //o.repaint();
-                // smell point above
-                if(!spanAbove && y>0 &&  testBarvy(image.getRGB(x,y-1),oRGB)){
-                    stack.push(new Point(x,y-1));
-                    spanAbove = true;
-                }else if(spanAbove && !testBarvy(image.getRGB(x,y-1),oRGB))
-                    spanAbove = false;
-                // smell point below
-                if(!spanBelow && y<(h-1) &&  testBarvy(image.getRGB(x,y+1),oRGB)){
-                    stack.push(new Point(x,y+1));
-                    spanBelow = true;
-                }else if(spanBelow && !testBarvy(image.getRGB(x,y+1),oRGB))
-                    spanBelow = false;
-                // move forward
-                x++;
-            }
+            
+            //image.setRGB(x, y, nRGB);
+            image.setLabel(x, y, 0);
+            if(  y>0   && image.getLabel(x, y-1) != 0 && colorTest(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
+            if(x<(w-1) && image.getLabel(x+1, y) != 0 && colorTest(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
+            if(y<(h-1) && image.getLabel(x, y+1) != 0 && colorTest(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
+            if(  x>0   && image.getLabel(x-1, y) != 0 && colorTest(image.getRGB(x-1, y), oRGB)) queue.add(new Point(x-1, y));
         }
-  // pro prvni bod na zasobniku
-    // zacneme nasim vychozim bodem na radku, tak ze ho vlozime do zasobniku
-    // nacouvame na zacatek
-    // shodime priznaky
-    // konecne jsme zacali vyplnovat radek
-    // pokud jsme nevypadli z obrazku a ma to smysl
-      // nastavime barvu
-      /* Pokud jsme jeste nesli nahoru a z tohoto bodu ma smysl jit nahoru, pak uloz na zasobnik bod nad nim. 
-         Pokud jsme uz sli nahoru a do tohoto bodu se dostaneme, nebude delat nic, jinak sunda priznak, ze jsme nahoru sli. 
-       */
-      // stejnym zpusobem rovnou ocuchava radek pod sebou
-      // posuneme se dale v radku
-        
-        /*IntStream stream = IntStream
-                .iterate(image.getMinY(), n->n+1)
-                .limit(image.getHeight());
-        // stream.parallel();
-        stream.forEach(n->ImageProcessing.scanlineFill(image,n));*/
     }
     
     public static BufferedImage gray2RGB(BufferedImage grayI){
@@ -216,53 +172,7 @@ public class ImageProcessing {
         return colorI;
     }
     
-    /** erode
-     * should find borders of components
-     * @param image
-     * @param outside
-     * @param border 
-     */
-    public static void erode(BufferedImage image, Color outside, Color border){
-        int w = image.getWidth();
-        int h = image.getHeight();
-        int out = outside.getRGB();
-        int brd = border.getRGB();
-     
-        // at first I will erode in columns
-        IntStream.iterate(0, n->n+1)
-                .limit(w)
-                .parallel()
-                .forEach(x->{
-                    boolean isout = image.getRGB(x, 0) == out;
-                    for(int y = 1; y < h; y++){
-                        if(isout && image.getRGB(x, y) != out){
-                            image.setRGB(x, y, brd);
-                            isout = false;
-                        }else if(!isout && image.getRGB(x, y)== out){
-                            image.setRGB(x, y-1, brd);
-                            isout = true;
-                        }
-                    }
-                });
-        
-        // then it erodes in row
-        // if I take care about border points or dont, result will be same.
-        IntStream.iterate(0, n->n+1)
-                .limit(h)
-                .parallel()
-                .forEach(y->{
-                    boolean isout = image.getRGB(0, y) == out;
-                    for(int x = 1; x < w; x++){
-                        if(isout && image.getRGB(x, y) != out){
-                            image.setRGB(x, y, brd);
-                            isout = false;
-                        }else if(!isout && image.getRGB(x, y)== out){
-                            image.setRGB(x-1, y, brd);
-                            isout = true;
-                        }
-                    }
-                });
-    }
+    
     
     /**
      * contains methods for separating components in image

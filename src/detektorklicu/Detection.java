@@ -23,6 +23,7 @@
  */
 package detektorklicu;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -41,11 +42,11 @@ public class Detection {
     private Detection(){
     }
     
-    public static Detection newFromFile(File file) throws Exception{
+    public static Detection newFromFile(File file) throws ExceptionMessage{
         return newFromImage(file);
     }
-    public static Detection newFromImage(File file) throws Exception {
-        if(! file.isFile()) throw new Exception("errorDetectionNotFile");
+    public static Detection newFromImage(File file) throws ExceptionMessage {
+        if(! file.isFile()) throw new ExceptionMessage("errorDetectionNotFile");
         Detection d = new Detection();
         d.originalFilename = file.getName();
         d.image = LabelImage.fromFile(file);
@@ -55,6 +56,23 @@ public class Detection {
     
     public BufferedImage getOriginal() {
         return (BufferedImage) image;
+    }
+    
+    public LabelImage getImage() {
+        return image;
+    }
+    
+    public void startDetection(){
+        image.separateBackground();
+        image.detectRegions();
+    }
+    
+    public BufferedImage getLabelsImage() {
+        return image.getLabelsImage(LabelImage.getPallete());
+    }
+    
+    public BufferedImage getBackgroundImage() {
+        return image.getBackgroundImage(Color.red);
     }
     
     /*private class DatectionSave implements Serializable {

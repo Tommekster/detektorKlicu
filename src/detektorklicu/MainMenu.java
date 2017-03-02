@@ -202,17 +202,9 @@ class MainMenu{
 
     /** odblokuje nabidku detekce */
     public void enableImageActions(boolean b){
-        //detectionMenu.setEnabled(b);
         fileSave.setEnabled(b);
         exportMenu.setEnabled(b);
-    }
-    public void enableLabelImageActions(boolean b){
-        toolShowBackground.setEnabled(b);
-        toolShowLabels.setEnabled(b);
-        toolRegionsList.setEnabled(b);
-        toolShowRegionsBounds.setEnabled(b);
-    }
-    public void enableRegionListActions(boolean b){
-        toolRegionDetail.setEnabled(b);
+        viewMenu.setEnabled(b);
+        toolsMenu.setEnabled(b);
     }
 }

@@ -74,12 +74,18 @@ public class LabelImage extends BufferedImage{
         return clone;
     }
     
-    public static LabelImage fromFile(File file) throws Exception{
+    private BufferedImage getCopyBufferedImage() {
+        ColorModel model = getColorModel();
+        WritableRaster raster = copyData(null);
+        return new BufferedImage(model, raster, model.isAlphaPremultiplied(), null);
+    }
+    
+    public static LabelImage fromFile(File file) throws ExceptionMessage{
         try{
             BufferedImage image = ImageIO.read(file);
             return LabelImage.createLabelImage(ImageProcessing.gray2RGB(image));
         }catch(IOException ex) {
-            Exception e = new Exception("errorLabelImageFileReading");
+            ExceptionMessage e = new ExceptionMessage("errorLabelImageFileReading");
             e.setStackTrace(ex.getStackTrace());
             throw e;
         }
@@ -106,6 +112,27 @@ public class LabelImage extends BufferedImage{
     public int getLabel(int x, int y){return labels[x][y];}
     public void setLabel(int x, int y, int v){labels[x][y]=v;}
     
+    public void separateBackground(){
+        ImageProcessing.floodFillSeparateBackground(this);
+        separatedBackground = true;
+        regions = null;
+    }
+    
+    public BufferedImage getBackgroundImage(Color color) {
+        if(!separatedBackground) separateBackground();
+        if(backgroundImage != null) return backgroundImage;
+        BufferedImage backgroundImage = getCopyBufferedImage();
+        int colorRGB = color.getRGB();
+        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
+            for(int y=0; y<getHeight(); y++){
+                if(getLabel(x, y) == 0)
+                    backgroundImage.setRGB(x, y, colorRGB);
+            }
+        });
+        
+        return backgroundImage;
+    }
+    
     public LabelImage getLabelsImage(List<Color> colors){
         // prepare IndexColorModel
         byte [] reds = new byte [colors.size()+1];
@@ -129,7 +156,7 @@ public class LabelImage extends BufferedImage{
             for(int y=0; y<getHeight(); y++){
                 li.labels[x][y] = labels[x][y];
                 if(labels[x][y] == 0)
-                    li.setRGB(x, y, y);
+                    li.setRGB(x, y, 0);
                 else 
                     li.setRGB(x, y, colors.get((labels[x][y]-1)%colors.size()).getRGB());
             }
@@ -205,6 +232,12 @@ public class LabelImage extends BufferedImage{
         return regions;
     }
     
+    public RegionsTableModel getRegionsTableModel() {
+        return new RegionsTableModel(getRegions());
+    }
+    
     protected final int [][] labels;
     protected List<Region> regions = null;
+    protected boolean separatedBackground = false;
+    protected BufferedImage backgroundImage;
 }

@@ -115,9 +115,9 @@ public class DetectionPanel extends javax.swing.JPanel {
         splitPane.setDividerLocation(getHeight());
     }
     
-    public void showTable() {
+    public void showRegionsTable() {
         tableHidden = false;
-        splitPane.setDividerLocation(getHeight()/3);
+        splitPane.setDividerLocation(getHeight()/4*3);
         fillTable();
     }
     
@@ -137,6 +137,25 @@ public class DetectionPanel extends javax.swing.JPanel {
     public void viewScalledSize() {
         canvas.setPreferredSize(null);
         canvas.setSize(imageScrollPane.getSize());
+    }
+    
+    public void detectRegions() {
+        detection.startDetection();
+    }
+    
+    public void showLabels() {
+        canvas.setImage(detection.getLabelsImage());
+        canvas.repaint();
+    }
+    
+    public void showBackground() {
+        canvas.setImage(detection.getBackgroundImage());
+        canvas.repaint();
+    }
+    
+    public void showOriginal() {
+        canvas.setImage(detection.getOriginal());
+        canvas.repaint();
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

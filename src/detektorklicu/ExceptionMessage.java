@@ -40,6 +40,10 @@ public class ExceptionMessage extends Exception{
         this.textBundle = textBundle;
         originalException = ex;
     }
+
+    ExceptionMessage(String textBundle) {
+        this(textBundle,null);
+    }
     
     public void displayMessage(Component parent) {
         try{

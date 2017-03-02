@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -116,7 +118,7 @@ public class MainWindow extends JFrame{
         // TODO
     }
     
-    public void detectRegions(ActionEvent e){
+    /*public void detectRegions(ActionEvent e){
         Canvas canvas = getCanvas();
         process = new Process(l.tr("evalDetectRegions")) {
 
@@ -134,43 +136,50 @@ public class MainWindow extends JFrame{
             }
         };
         process.execute();
-    }
+    }*/
     
     public void viewOriginalSize(ActionEvent e) {
-        
+        if(!(getActiveComponent() instanceof DetectionPanel)) return;
+        DetectionPanel d = (DetectionPanel) getActiveComponent();
+        d.viewOriginalSize();
     }
     
     public void viewScalled(ActionEvent e) {
-        
+         if(!(getActiveComponent() instanceof DetectionPanel)) return;
+        DetectionPanel d = (DetectionPanel) getActiveComponent();
+        d.viewScalledSize();
     }
     
     public void toolShowOriginal(ActionEvent e) {
+        if(!(getActiveComponent() instanceof DetectionPanel)) return;
         
+        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        detPane.showOriginal();
     }
     
     public void toolShowBackground(ActionEvent e) {
+        if(!(getActiveComponent() instanceof DetectionPanel)) return;
         
+        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        detPane.showBackground();
     }
     
     public void toolShowLabels(ActionEvent e){
-        LabelImage image = (LabelImage)getImage();
-        addImage(image.getLabelsImage(LabelImage.getPallete()));
+        if(!(getActiveComponent() instanceof DetectionPanel)) return;
+        
+        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        detPane.showLabels();
     }
     
     public void toolRegionsList(ActionEvent e) {
-        LabelImage image = (LabelImage)getImage();
-        process = new Process(l.tr("evalToolRegionsList")) {
-
-            @Override
-            public void action() {
-                addRegionsTable(image.getRegions());
-            }
-        };
-        process.execute();
+        if(!(getActiveComponent() instanceof DetectionPanel)) return;
+        
+        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        detPane.showRegionsTable();
     }
     
     public void toolShowRegionsBounds(ActionEvent e){
-        LabelImage image = (LabelImage) getImage();
+        /*LabelImage image = (LabelImage) getImage();
         process = new Process(l.tr("evalToolShowRegionsBounds")) {
 
             @Override
@@ -182,7 +191,7 @@ public class MainWindow extends JFrame{
                 });
             }
         };
-        process.execute();
+        process.execute();*/
     }
     
     public void toolRegionDetail(ActionEvent e) {
@@ -210,6 +219,23 @@ public class MainWindow extends JFrame{
     
     public void helpAbout(ActionEvent e){
         // TODO
+    }
+    
+    private void newDetection(File file){
+        process = new Process(l.tr("evalToolRegionsList")) {
+
+            @Override
+            public void action() {
+                try {
+                    DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file));
+                    tabsPane.add(file.getName(), detectionPane);
+                    detectionPane.detectRegions();
+                } catch (ExceptionMessage ex) {
+                    ex.displayMessage(this.workerDialog);
+                }
+            }
+        };
+        process.execute();
     }
 
     /** Inicializace okna 
@@ -244,29 +270,6 @@ public class MainWindow extends JFrame{
     private Component getActiveComponent(){
         return tabsPane.getSelectedComponent();
     }
-    /*private boolean activeIsRegionList(){
-        Component c = getActiveComponent();
-        return (c instanceof JTable 
-                || (c instanceof JScrollPane 
-                && ((JScrollPane)c).getViewport().getView() instanceof JTable));
-    }
-    private JTable getRegionList(){
-        return (JTable)((JScrollPane)getActiveComponent()).getViewport().getView();
-    }
-    private boolean activeIsCanvas(){
-        Component c = getActiveComponent();
-        return c instanceof Canvas;
-    }
-    private boolean activeIsLabelledImage(){
-        Component c = getActiveComponent();
-        return activeIsCanvas() && ((Canvas)c).getImage() instanceof LabelImage;
-    }*/
-    private Canvas getCanvas(){
-        return (Canvas)getActiveComponent();
-    }
-    private BufferedImage getImage(){
-        return ((Canvas)getActiveComponent()).getImage();
-    }
     
     private boolean activeIsDetectionPanel(){
         return getActiveComponent() instanceof DetectionPanel;
@@ -274,8 +277,6 @@ public class MainWindow extends JFrame{
     
     private void checkPossibleActions(){
         mainMenu.enableImageActions(activeIsDetectionPanel());
-        mainMenu.enableLabelImageActions(activeIsDetectionPanel());
-        mainMenu.enableRegionListActions(activeIsDetectionPanel());
     }
     
     /** raise the event if active tabs is changed */
@@ -306,14 +307,7 @@ public class MainWindow extends JFrame{
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
             File selectedFile = new File(fileChooser.getCurrentDirectory()
                     .getAbsolutePath(), fileChooser.getSelectedFile().getName());
-            try {
-                tabsPane.add(selectedFile.getName(), new DetectionPanel(Detection.newFromFile(selectedFile)));
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(fileChooser, 
-                        l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
-                        l.tr("otevritSouborChybaTitle"), 
-                        JOptionPane.ERROR_MESSAGE);
-            }
+            newDetection(selectedFile);
         }
     }
     private void saveImage(ActionEvent ae){
