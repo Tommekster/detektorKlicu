@@ -54,11 +54,17 @@ class MainMenu{
     private final JMenuItem exportLabels = new JMenuItem();
     private final JMenuItem exportRegions = new JMenuItem();
 
-    private final JMenu detectionMenu = new JMenu();
+    /*private final JMenu detectionMenu = new JMenu();
     private final JMenuItem detectionTest = new JMenuItem();
-    private final JMenuItem detectionRegions = new JMenuItem();
+    private final JMenuItem detectionRegions = new JMenuItem();*/
 
+    private final JMenu viewMenu = new JMenu();
+    private final JMenuItem viewOriginalSize = new JMenuItem();
+    private final JMenuItem viewScalled = new JMenuItem();
+    
     private final JMenu toolsMenu = new JMenu();
+    private final JMenuItem toolShowOriginal = new JMenuItem();
+    private final JMenuItem toolShowBackground = new JMenuItem();
     private final JMenuItem toolShowLabels = new JMenuItem();
     private final JMenuItem toolRegionsList = new JMenuItem();
     private final JMenuItem toolShowRegionsBounds = new JMenuItem();
@@ -88,18 +94,24 @@ class MainMenu{
         addMenuItem(fileOpen, e->window.fileOpen(e));
         addMenuItem(fileSave, e->window.fileSave(e));
         addMenuItem(exportMenu, null);
-        lastAddedMenu = exportMenu;
-        addMenuItem(exportOriginal, e->window.fileExportOriginal(e));
-        addMenuItem(exportLabels, e->window.fileExportLabels(e));
-        addMenuItem(exportRegions, e->window.fileExportRegionsList(e));
-        lastAddedMenu = fileMenu;
         addSeparator();
         addMenuItem(fileQuit,e->window.fileQuit(e));
         
-        addMenu(detectionMenu);
-        addMenuItem(detectionRegions, e->window.detectRegions(e));
+        selectMenu(exportMenu);
+        addMenuItem(exportOriginal, e->window.fileExportOriginal(e));
+        addMenuItem(exportLabels, e->window.fileExportLabels(e));
+        addMenuItem(exportRegions, e->window.fileExportRegionsList(e));
+        
+        //addMenu(detectionMenu);
+        //addMenuItem(detectionRegions, e->window.detectRegions(e));
+        
+        addMenu(viewMenu);
+        addMenuItem(viewOriginalSize, e->window.viewOriginalSize(e));
+        addMenuItem(viewScalled, e->window.viewScalled(e));
         
         addMenu(toolsMenu);
+        addMenuItem(toolShowOriginal, e->window.toolShowOriginal(e));
+        addMenuItem(toolShowBackground, e->window.toolShowBackground(e));
         addMenuItem(toolShowLabels, e->window.toolShowLabels(e));
         addMenuItem(toolRegionsList, e->window.toolRegionsList(e));
         addMenuItem(toolShowRegionsBounds, e->window.toolShowRegionsBounds(e));
@@ -125,8 +137,12 @@ class MainMenu{
         toolRegionDetail.addActionListener(MainWindow.this::toolRegionDetail);*/
     }
     
-    private void addMenu(JMenu menu, String textBundle){
+    private void selectMenu(JMenu menu){
         lastAddedMenu = menu;
+    }
+    
+    private void addMenu(JMenu menu, String textBundle){
+        selectMenu(menu);
         menuBar.add(menu);
         try{
             menu.setText(ResourceBundle.getBundle("texts/ToolBar").getString(textBundle));
@@ -186,10 +202,12 @@ class MainMenu{
 
     /** odblokuje nabidku detekce */
     public void enableImageActions(boolean b){
-        detectionMenu.setEnabled(b);
+        //detectionMenu.setEnabled(b);
         fileSave.setEnabled(b);
+        exportMenu.setEnabled(b);
     }
     public void enableLabelImageActions(boolean b){
+        toolShowBackground.setEnabled(b);
         toolShowLabels.setEnabled(b);
         toolRegionsList.setEnabled(b);
         toolShowRegionsBounds.setEnabled(b);

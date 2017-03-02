@@ -30,6 +30,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -69,6 +72,17 @@ public class LabelImage extends BufferedImage{
         LabelImage clone = new LabelImage(model, raster, model.isAlphaPremultiplied(), null);
 
         return clone;
+    }
+    
+    public static LabelImage fromFile(File file) throws Exception{
+        try{
+            BufferedImage image = ImageIO.read(file);
+            return LabelImage.createLabelImage(ImageProcessing.gray2RGB(image));
+        }catch(IOException ex) {
+            Exception e = new Exception("errorLabelImageFileReading");
+            e.setStackTrace(ex.getStackTrace());
+            throw e;
+        }
     }
     
     public static List<Color> getPallete(){

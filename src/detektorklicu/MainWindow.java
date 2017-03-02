@@ -136,6 +136,21 @@ public class MainWindow extends JFrame{
         process.execute();
     }
     
+    public void viewOriginalSize(ActionEvent e) {
+        
+    }
+    
+    public void viewScalled(ActionEvent e) {
+        
+    }
+    
+    public void toolShowOriginal(ActionEvent e) {
+        
+    }
+    
+    public void toolShowBackground(ActionEvent e) {
+        
+    }
     
     public void toolShowLabels(ActionEvent e){
         LabelImage image = (LabelImage)getImage();
@@ -229,7 +244,7 @@ public class MainWindow extends JFrame{
     private Component getActiveComponent(){
         return tabsPane.getSelectedComponent();
     }
-    private boolean activeIsRegionList(){
+    /*private boolean activeIsRegionList(){
         Component c = getActiveComponent();
         return (c instanceof JTable 
                 || (c instanceof JScrollPane 
@@ -245,7 +260,7 @@ public class MainWindow extends JFrame{
     private boolean activeIsLabelledImage(){
         Component c = getActiveComponent();
         return activeIsCanvas() && ((Canvas)c).getImage() instanceof LabelImage;
-    }
+    }*/
     private Canvas getCanvas(){
         return (Canvas)getActiveComponent();
     }
@@ -253,10 +268,14 @@ public class MainWindow extends JFrame{
         return ((Canvas)getActiveComponent()).getImage();
     }
     
+    private boolean activeIsDetectionPanel(){
+        return getActiveComponent() instanceof DetectionPanel;
+    }
+    
     private void checkPossibleActions(){
-        mainMenu.enableImageActions(activeIsCanvas());
-        mainMenu.enableLabelImageActions(activeIsLabelledImage());
-        mainMenu.enableRegionListActions(activeIsRegionList());
+        mainMenu.enableImageActions(activeIsDetectionPanel());
+        mainMenu.enableLabelImageActions(activeIsDetectionPanel());
+        mainMenu.enableRegionListActions(activeIsDetectionPanel());
     }
     
     /** raise the event if active tabs is changed */
@@ -288,10 +307,8 @@ public class MainWindow extends JFrame{
             File selectedFile = new File(fileChooser.getCurrentDirectory()
                     .getAbsolutePath(), fileChooser.getSelectedFile().getName());
             try {
-                BufferedImage image = ImageIO.read(selectedFile);
-                image = ImageProcessing.gray2RGB(image);
-                addImage(image);
-            } catch (IOException ex) {
+                tabsPane.add(selectedFile.getName(), new DetectionPanel(Detection.newFromFile(selectedFile)));
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(fileChooser, 
                         l.tr("otevritSouborChyba")+"\n"+ex.toString(), 
                         l.tr("otevritSouborChybaTitle"), 
@@ -317,17 +334,17 @@ public class MainWindow extends JFrame{
         if(jfc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
             String format = "PNG";
             if(jfc.getFileFilter().equals(filtrBMP)) format = "BMP";
-                
-            try{
+             // TODO   
+           /* try{
                 File vybranySoubor = new File(jfc.getCurrentDirectory()
                         .getAbsolutePath(), jfc.getSelectedFile().getName());
-                ImageIO.write(getImage(), format, vybranySoubor);
+                //ImageIO.write(getImage(), format, vybranySoubor);
             }catch(IOException ex){
                 JOptionPane.showMessageDialog(jfc, 
                             l.tr("saveFileError")+"\n"+ex.toString(), 
                             l.tr("saveFileErrorTitle"), 
                             JOptionPane.ERROR_MESSAGE);
-            }
+            }*/
         }
     }
     
