@@ -35,6 +35,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -141,7 +143,7 @@ public class MainWindow extends JFrame{
         if(!(getActiveComponent() instanceof DetectionPanel)) return;
         
         DetectionPanel detPane = (DetectionPanel) getActiveComponent();
-        detPane.showRegionsTable();
+        detPane.toggleRegionsTable();
     }
     
     public void toolShowRegionsBounds(ActionEvent e){
@@ -185,20 +187,13 @@ public class MainWindow extends JFrame{
     }
     
     private void newDetection(File file){
-        process = new Process(l.tr("evalToolRegionsList")) {
-
-            @Override
-            public void action() {
-                try {
-                    DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file));
-                    tabsPane.add(file.getName(), detectionPane);
-                    detectionPane.detectRegions();
-                } catch (ExceptionMessage ex) {
-                    ex.displayMessage(this.workerDialog);
-                }
-            }
-        };
-        process.execute();
+        try {
+            DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file),this);
+            tabsPane.add(file.getName(), detectionPane);
+            //detectionPane.detectRegions();
+        } catch (ExceptionMessage ex) {
+            ex.displayMessage(this/*.workerDialog*/);
+        }
     }
 
     /** Inicializace okna 
@@ -338,12 +333,27 @@ public class MainWindow extends JFrame{
         checkPossibleActions();
     }
     
+    void runBackgroundProcess(String textBundle, ProcessIface action){
+        process = new Process(textBundle) {
+
+            @Override
+            public void action() {
+                try {
+                    action.action();
+                } catch (ExceptionMessage ex) {
+                    ex.displayMessage(this.workerDialog);
+                }
+            }
+        };
+        process.execute();
+    }
+    
     abstract class Process extends SwingWorker<Void, Void>{
         abstract public void action();
         WorkerDialog workerDialog;
         
-        public Process(String title){
-            workerDialog = new WorkerDialog(MainWindow.this,title) {
+        public Process(String textBundle){
+            workerDialog = new WorkerDialog(MainWindow.this,textBundle) {
                 @Override
                 public void cancelJob() {
                     cancel(true);
@@ -365,5 +375,9 @@ public class MainWindow extends JFrame{
             MainWindow.this.checkPossibleActions();
             workerDialog.setVisible(false);
         }
+    }
+    
+    static abstract interface ProcessIface{
+        public abstract void action() throws ExceptionMessage;
     }
 }

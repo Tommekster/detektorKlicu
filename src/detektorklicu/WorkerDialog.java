@@ -29,6 +29,8 @@ import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -39,10 +41,11 @@ import javax.swing.JLabel;
  * @author zikmuto2
  */
 public abstract class WorkerDialog extends JDialog{
-    public WorkerDialog(JFrame owner,String title){
-        super(owner, l.tr("workerTitle")+title, /*modal*/ false);
+    public WorkerDialog(JFrame owner,String textBundle){
+        super(owner, "in process...", /*modal*/ false);
         this.owner = owner;
         initialization();
+        setTexts(textBundle);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e){
@@ -55,20 +58,40 @@ public abstract class WorkerDialog extends JDialog{
         if(owner != null){
             Rectangle r = owner.getBounds();
             setBounds(r.x+(r.width-200)/2, r.y+(r.height-140)/2, 200, 140);
-        }else setBounds(100,100,200,140);
-        //setPreferredSize(new Dimension(300, 200));
+        }else{
+            setBounds(100,100,200,140);
+        }
+        setPreferredSize(new Dimension(200, 140));
         setResizable(false);
         setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        add(lblCalculation);
+        add(lblMessage);
         add(btnCancel);
-        //lblCalculation.setBounds(10, 10, WIDTH, WIDTH);
         btnCancel.addActionListener(e->cancelJob());
+    }
+    
+    private void setTexts(String textBundle){
+        String title;
+        String message;
+        try{
+            title = ResourceBundle.getBundle("texts/WorkerDialog").getString(textBundle);
+            message = ResourceBundle.getBundle("texts/WorkerDialog").getString(textBundle+"Msg");
+        }catch(MissingResourceException e){
+            title = textBundle;
+            message = textBundle;
+        }
+        setTitle(title);
+        lblMessage.setText(message);
+        
+        try{
+            btnCancel.setText(ResourceBundle.getBundle("texts/WorkerDialog").getString("cancelButtonLabel"));
+        }catch(MissingResourceException e){
+            btnCancel.setText("Cancel");
+        }
     }
     
     public abstract void cancelJob();
     
     JFrame owner = null;
-    private static final Lokalizator l = Lokalizator.getLokalizator();
-    private final JLabel lblCalculation = new JLabel(l.tr("workerLabel"));
-    private final JButton btnCancel = new JButton(l.tr("workerButton"));
+    private final JLabel lblMessage = new JLabel(); //l.tr("workerLabel"));
+    private final JButton btnCancel = new JButton();
 }

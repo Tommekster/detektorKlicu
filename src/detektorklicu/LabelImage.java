@@ -189,17 +189,21 @@ public class LabelImage extends BufferedImage{
     }
     
     public void detectRegions(){
+        if(!separatedBackground) separateBackground();
         AreaDetector.detectRegions(this);
+        detectedRegions = true;
     }
     
     public boolean hasRegions(){return regions!=null && !regions.isEmpty();}
     
     public void makeRegionsList(){
+        if(!detectedRegions) detectRegions();
         List<Integer> regionsLabels = getLabelsList();
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
+        //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
         boolean disable1pixel = true;
         
-        regionsLabels.parallelStream().forEach(label->{
+        regionsLabels.stream().parallel().forEach(label->{
             PointExtremes extremes = null;
             int area = 0;
             int xc = 0;
@@ -252,5 +256,6 @@ public class LabelImage extends BufferedImage{
     protected final int [][] labels;
     protected List<Region> regions = null;
     protected boolean separatedBackground = false;
+    protected boolean detectedRegions = false;
     protected BufferedImage backgroundImage;
 }

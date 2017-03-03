@@ -37,13 +37,14 @@ public class DetectionPanel extends javax.swing.JPanel {
      * Creates new form DetectionPanel
      * @param detection 
      */
-    public DetectionPanel(Detection detection) {
+    public DetectionPanel(Detection detection, MainWindow parent) {
         this.detection = detection;
         this.canvas = new Canvas(detection.getOriginal());
+        this.parent = parent;
         initComponents();
         
         imageScrollPane.setViewportView(canvas);
-        
+        tableScrollPane.setVisible(false);
     }
 
     /**
@@ -104,23 +105,25 @@ public class DetectionPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentResized
-        if(tableHidden) hideTable();
+        //if(regionsTableHidden) hideTable();
     }//GEN-LAST:event_formComponentResized
 
     private void tableScrollPaneComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_tableScrollPaneComponentResized
-        tableHidden = false;
-        fillTable();
+        //tableHidden = false;
+        //fillTable();
     }//GEN-LAST:event_tableScrollPaneComponentResized
-
-    public void hideTable() {
-        tableHidden = true;
-        splitPane.setDividerLocation(getHeight());
+    
+    public void showRegionsTable(boolean b) {
+        tableScrollPane.setVisible(b);
+        if(b) {
+            splitPane.setDividerLocation(getHeight()/4*3);
+            parent.runBackgroundProcess("fillTable", this::fillTable);// (0)->{fillTable();});
+            //(<any> 0)->{fillTable();}
+        }
     }
     
-    public void showRegionsTable() {
-        tableHidden = false;
-        splitPane.setDividerLocation(getHeight()/4*3);
-        fillTable();
+    public void toggleRegionsTable(){
+        showRegionsTable(!tableScrollPane.isVisible());
     }
     
     public void fillTable(){
@@ -146,13 +149,17 @@ public class DetectionPanel extends javax.swing.JPanel {
     }
     
     public void showLabels() {
-        canvas.setImage(detection.getLabelsImage());
-        canvas.repaint();
+        parent.runBackgroundProcess("showLabels", ()->{
+            canvas.setImage(detection.getLabelsImage());
+            canvas.repaint();
+        });
     }
     
     public void showBackground() {
-        canvas.setImage(detection.getBackgroundImage());
-        canvas.repaint();
+        parent.runBackgroundProcess("showLabels", ()->{
+            canvas.setImage(detection.getBackgroundImage());
+            canvas.repaint();
+        });
     }
     
     public void showOriginal() {
@@ -187,6 +194,6 @@ public class DetectionPanel extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     private Detection detection;
-    private boolean tableHidden = true;
     private Canvas canvas;
+    private MainWindow parent;
 }
