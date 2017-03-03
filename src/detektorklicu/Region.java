@@ -25,12 +25,8 @@ package detektorklicu;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
+import java.awt.Polygon;
 import java.awt.geom.Point2D;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.DoubleAdder;
 
 /**
@@ -61,9 +57,18 @@ public class Region {
     public BoundingBox getBoundings(){return boundingBox;}
     public Point2D getCenter(){return center;}
     public boolean hasEllipse(){return halfAxes[0] != 0;}
-    public double getOrientation() {return orientation;}
-    public double getHalfAxisA() {return halfAxes[0];}
-    public double getHalfAxisB() {return halfAxes[1];}
+    public double getOrientation() {
+        if(!hasEllipse()) findBoundingEllipse();
+        return orientation;
+    }
+    public double getHalfAxisA() {
+        if(!hasEllipse()) findBoundingEllipse();
+        return halfAxes[0];
+    }
+    public double getHalfAxisB() {
+        if(!hasEllipse()) findBoundingEllipse();
+        return halfAxes[1];
+    }
     
     public double centralMoment(int p, int q){
         //AtomicInteger sum = new AtomicInteger(0);
@@ -87,59 +92,49 @@ public class Region {
         return sum.doubleValue();
     }
     
-    public void findBoundingEllipse(){
+    private void findBoundingEllipse(){
         double u11 = centralMoment(1, 1);
         double u20 = centralMoment(2, 0);
         double u02 = centralMoment(0, 2);
         
-        //double Asquared = 2*u11;
         double A = 2*u11;
         double B = u20-u02;
         double C = u20+u02;
         double D_root = Math.sqrt(B*B+A*A);
         
-        /*System.out.println(u20+" "+u11);
-        System.out.println(u11+" "+u02);*/
-        
         orientation = Math.atan(2*u11/(u20-u02))/2 + (((u20-u02)<0)?Math.PI/2:0);
         halfAxes[0] = Math.sqrt(2*(C+D_root)/area);
         halfAxes[1] = Math.sqrt(2*(C-D_root)/area);
-        
-        /*double tan = B/D_root;
-        cosTheta = (A == 0)? 0 : Math.sqrt((1+tan)/2);
-        sinTheta = (A == 0)? 0 : ((A>=0)?Math.sqrt((1+tan)/2):-Math.sqrt((1+tan)/2));*/
     }
     
     public void drawBoundingRectangle(Color color){
+        Polygon pol = getBoundingRectangle();
+        Graphics g = parent.getGraphics();
+        g.setColor(color);
+        g.drawPolygon(pol);
+    }
+
+    public Polygon getBoundingRectangle() {
         if(!hasEllipse()) findBoundingEllipse();
-        
         double a = halfAxes[0];
         double b = halfAxes[1];
-        
         double cosTheta = Math.cos(orientation);
         double sinTheta = Math.sin(orientation);
-        
         double aCosTh = a*cosTheta;
         double aSinTh = a*sinTheta;
         double bCosTh = b*cosTheta;
         double bSinTh = -b*sinTheta;
-        
         double xc = center.getX();
         double yc = center.getY();
-        
         Point2D [] p ={
             new Point2D.Double(xc + aCosTh + bSinTh, yc + aSinTh + bCosTh),
             new Point2D.Double(xc + aCosTh - bSinTh, yc + aSinTh - bCosTh),
             new Point2D.Double(xc - aCosTh - bSinTh, yc - aSinTh - bCosTh),
             new Point2D.Double(xc - aCosTh + bSinTh, yc - aSinTh + bCosTh)
         };
-        
-        Graphics g = parent.getGraphics();
-        g.setColor(color);
-        for(int i = 0; i<4; i++)
-            g.drawLine((int)p[i].getX(),(int)p[i].getY(),(int)p[(i+1)%4].getX(),(int)p[(i+1)%4].getY());
-        
-        //AffineTransform.getRotateInstance(orientation)
-          //.createTransformedShape(new Ellipse2D.Double(0, 0, 2*halfAxes[0], 2*halfAxes[1]));
+        Polygon pol = new Polygon();
+        for(int i = 0; i < 4; i++) pol.addPoint((int)p[i].getX(),(int)p[i].getY());
+        pol.addPoint((int)p[0].getX(),(int)p[0].getY());
+        return pol;
     }
 }

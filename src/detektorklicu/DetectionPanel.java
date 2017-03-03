@@ -23,7 +23,9 @@
  */
 package detektorklicu;
 
+import java.awt.Color;
 import java.awt.Dimension;
+import javax.swing.JTable;
 
 /**
  *
@@ -156,6 +158,25 @@ public class DetectionPanel extends javax.swing.JPanel {
     public void showOriginal() {
         canvas.setImage(detection.getOriginal());
         canvas.repaint();
+    }
+    
+    public void showRegions() {
+        canvas.displayRegions(detection.getImage().getRegionsPolygons(),Color.blue);
+        canvas.repaint();
+    }
+    
+    public void hideRegions() {
+        canvas.displayRegions(null,Color.blue);
+        canvas.repaint();
+    }
+    
+    public void toggleRegions() {
+        if(canvas.showingRegions()) hideRegions();
+        else showRegions();
+    }
+    
+    public JTable getRegionsTable() {
+        return regionsTable;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

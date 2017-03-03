@@ -28,33 +28,19 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JToolBar;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
@@ -115,28 +101,8 @@ public class MainWindow extends JFrame{
     
     /** exports regions list */
     public void fileQuit(ActionEvent e){
-        // TODO
+        closeProgram();
     }
-    
-    /*public void detectRegions(ActionEvent e){
-        Canvas canvas = getCanvas();
-        process = new Process(l.tr("evalDetectRegions")) {
-
-            @Override
-            public void action() {
-                // Imabe should be label image with separated background
-                // if it is not then we separate the background
-                if(!(canvas.getImage() instanceof LabelImage)) {
-                    canvas.setImage(ImageProcessing.floodFillBackground(canvas.getImage(), Color.red));
-                }
-                
-                // background is separated, regions can be denoted
-                ((LabelImage)canvas.getImage()).detectRegions();
-                
-            }
-        };
-        process.execute();
-    }*/
     
     public void viewOriginalSize(ActionEvent e) {
         if(!(getActiveComponent() instanceof DetectionPanel)) return;
@@ -179,32 +145,29 @@ public class MainWindow extends JFrame{
     }
     
     public void toolShowRegionsBounds(ActionEvent e){
-        /*LabelImage image = (LabelImage) getImage();
-        process = new Process(l.tr("evalToolShowRegionsBounds")) {
+        Component c = tabsPane.getSelectedComponent();
+        if(c instanceof DetectionPanel){
+            process = new Process(l.tr("evalToolShowRegionsBounds")) {
 
-            @Override
-            public void action() {
-                List<Region> regions = image.getRegions();
-                regions.parallelStream().forEach(region->{
-                    region.drawBoundingRectangle(Color.blue);
-                    MainWindow.this.repaint();
-                });
-            }
-        };
-        process.execute();*/
+                @Override
+                public void action() {
+                    ((DetectionPanel)c).toggleRegions();
+                }
+            };
+            process.execute();
+        }
     }
     
     public void toolRegionDetail(ActionEvent e) {
         Component c = tabsPane.getSelectedComponent();
-        if(c instanceof JScrollPane){
-           Component table = ((JScrollPane)c).getViewport().getView();
+        if(c instanceof DetectionPanel){
+           Component table = ((DetectionPanel)c).getRegionsTable();
            if(table instanceof JTable) {
                int row = ((JTable) table).getSelectedRow();
                if(row >= 0){
                    TableModel model = ((JTable) table).getModel();
                    if(model instanceof RegionsTableModel){
                        Region region = ((RegionsTableModel) model).getRegionAt(row);
-                       if(!region.hasEllipse()) region.findBoundingEllipse();
                        StringBuilder sb = new StringBuilder();
                        sb.append("thetha=").append(region.getOrientation()).append("\n")
                                .append("a=").append(region.getHalfAxisA()).append("\n")
@@ -262,7 +225,7 @@ public class MainWindow extends JFrame{
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e){
-                System.exit(0);
+                closeProgram();
             }
         });
     }
@@ -283,6 +246,10 @@ public class MainWindow extends JFrame{
     private void tabsChange(ChangeEvent e){
         if(e.getSource() != tabsPane) return;
         checkPossibleActions();
+    }
+    
+    private void closeProgram(){
+        System.exit(0);
     }
     
     /** closes active tab after triple right-click
@@ -362,44 +329,6 @@ public class MainWindow extends JFrame{
         }
     }
     
-    private void detectionTest(ActionEvent e){
-        List<Color> colors = new LinkedList<>();
-        colors.add(Color.black);
-        colors.add(Color.cyan);
-        // colors.add(Color.darkGray);
-        colors.add(Color.gray);
-        colors.add(Color.green);
-        colors.add(Color.yellow);
-        colors.add(Color.lightGray);
-        colors.add(Color.magenta);
-        colors.add(Color.orange);
-        colors.add(Color.pink);
-        colors.add(Color.red);
-        byte [] reds = new byte [colors.size()];
-        byte [] greens = new byte [colors.size()];
-        byte [] blues = new byte[colors.size()];
-        for(int j = 0; j < colors.size(); j++){
-            reds[j] = (byte)colors.get(j).getRed();
-            greens[j] = (byte)colors.get(j).getGreen();
-            blues[j] = (byte)colors.get(j).getBlue();
-        }
-        
-        IndexColorModel cm = new IndexColorModel(4, reds.length, reds, greens, blues);
-        BufferedImage pic = new BufferedImage(5, 5, BufferedImage.TYPE_BYTE_INDEXED, cm);
-        colors.add(Color.white);
-        colors.add(Color.blue);
-        for(int j = 0; j < pic.getWidth(); j++){
-            for(int i = 0; i < pic.getHeight(); i++){
-                pic.setRGB(j, i, colors.get(j%colors.size()).getRGB());
-                //System.out.println("["+i+","+j+"]");
-            }
-        }
-        addImage(pic);
-        //canvas.setImage(ImageProcessing.gray2RGB(canvas.getImage()));
-        //ImageProcessing.floodFillBackground(canvas.getImage(), Color.red);
-        repaint();
-    }
-    
     /** setter pro obrazek do kresliciho panelu
      * @param obrazek obrazek k nakresleni
      */
@@ -407,15 +336,6 @@ public class MainWindow extends JFrame{
         //canvas.setImage(obrazek);
         tabsPane.addTab(l.tr("sourceImage"), new Canvas(obrazek));
         checkPossibleActions();
-    }
-    
-    private void addRegionsTable(List<Region> regions){
-        JTable table = new JTable(new RegionsTableModel(regions));
-        //table.getColorModel().getColorSpace()
-        //table.getColumnModel().getColumn(WIDTH)
-        tabsPane.add(l.tr("regionsTable"), new JScrollPane(table));
-        table.getColumnModel().getColumn(0).setWidth(30);
-        table.getColumnModel().getColumn(3).setWidth(60);
     }
     
     abstract class Process extends SwingWorker<Void, Void>{

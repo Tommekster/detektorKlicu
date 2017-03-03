@@ -25,6 +25,7 @@ package detektorklicu;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -33,13 +34,10 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 
@@ -230,6 +228,21 @@ public class LabelImage extends BufferedImage{
     public List<Region> getRegions() {
         if(!hasRegions()) makeRegionsList();
         return regions;
+    }
+    
+    public void drawRegions() {
+        List<Region> regions = getRegions();
+        regions.parallelStream().forEach(region->{
+            region.drawBoundingRectangle(Color.blue);
+        });
+    }
+    
+    public List<Polygon> getRegionsPolygons(){
+        List<Polygon> polygons = new ArrayList<>();
+        getRegions().stream().forEach(r->{
+            polygons.add(r.getBoundingRectangle());
+        });
+        return polygons;
     }
     
     public RegionsTableModel getRegionsTableModel() {
