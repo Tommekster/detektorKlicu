@@ -131,7 +131,14 @@ public class LabelImage extends BufferedImage{
         return backgroundImage;
     }
     
+    public BufferedImage getLabelsImage(){
+        if(labelsImage == null) 
+            labelsImage = getLabelsImage(LabelImage.getPallete());
+        return labelsImage;
+    }
+    
     public LabelImage getLabelsImage(List<Color> colors){
+        if(!denotedRegions) denoteRegions();
         // prepare IndexColorModel
         byte [] reds = new byte [colors.size()+1];
         byte [] greens = new byte [colors.size()+1];
@@ -164,6 +171,7 @@ public class LabelImage extends BufferedImage{
     }
         
     public List<Integer> getLabelsList(){
+        if(!denotedRegions) denoteRegions();
         List<List<Integer>> inRow = new ArrayList<>(getWidth());
         
         IntStream.iterate(0, n->n+1).limit(getWidth())
@@ -188,16 +196,16 @@ public class LabelImage extends BufferedImage{
         return uniqueLabels;
     }
     
-    public void detectRegions(){
+    public void denoteRegions(){
         if(!separatedBackground) separateBackground();
         AreaDetector.detectRegions(this);
-        detectedRegions = true;
+        denotedRegions = true;
     }
     
     public boolean hasRegions(){return regions!=null && !regions.isEmpty();}
     
     public void makeRegionsList(){
-        if(!detectedRegions) detectRegions();
+        if(!denotedRegions) denoteRegions();
         List<Integer> regionsLabels = getLabelsList();
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
         //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
@@ -256,6 +264,7 @@ public class LabelImage extends BufferedImage{
     protected final int [][] labels;
     protected List<Region> regions = null;
     protected boolean separatedBackground = false;
-    protected boolean detectedRegions = false;
+    protected boolean denotedRegions = false;
     protected BufferedImage backgroundImage;
+    protected BufferedImage labelsImage;
 }

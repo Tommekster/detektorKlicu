@@ -64,11 +64,11 @@ public class Detection {
     
     public void startDetection(){
         image.separateBackground();
-        image.detectRegions();
+        image.denoteRegions();
     }
     
     public BufferedImage getLabelsImage() {
-        return image.getLabelsImage(LabelImage.getPallete());
+        return image.getLabelsImage();
     }
     
     public BufferedImage getBackgroundImage() {
