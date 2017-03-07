@@ -339,6 +339,13 @@ public class MainWindow extends JFrame{
                     workerDialog.setVisible(false);
                 }
             };
+            addPropertyChangeListener(this::propertyChanged);
+        }
+        
+        void propertyChanged(PropertyChangeEvent evt){
+            System.out.println(evt.getPropertyName());
+            if("state".equals(evt.getPropertyName()))
+                System.out.println(getState().toString());
         }
         
         @Override

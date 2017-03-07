@@ -26,9 +26,11 @@ package detektorklicu;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.beans.PropertyChangeEvent;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingWorker;
 import javax.swing.table.TableModel;
 
 /**
@@ -49,6 +51,10 @@ public class DetectionPanel extends javax.swing.JPanel {
         
         imageScrollPane.setViewportView(canvas);
         tableScrollPane.setVisible(false);
+        progressPanel.setVisible(false);
+        
+        detection.getImage().setWorker(worker);
+        worker.addPropertyChangeListener(this::workerChangeListener);
     }
 
     /**
@@ -64,6 +70,9 @@ public class DetectionPanel extends javax.swing.JPanel {
         tableScrollPane = new javax.swing.JScrollPane();
         regionsTable = new javax.swing.JTable();
         imageScrollPane = new javax.swing.JScrollPane();
+        progressPanel = new javax.swing.JPanel();
+        jProgressBar1 = new javax.swing.JProgressBar();
+        cancelBtn = new javax.swing.JToggleButton();
 
         addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent evt) {
@@ -101,15 +110,48 @@ public class DetectionPanel extends javax.swing.JPanel {
         splitPane.setBottomComponent(tableScrollPane);
         splitPane.setLeftComponent(imageScrollPane);
 
+        jProgressBar1.setMaximum(1000);
+        jProgressBar1.setToolTipText("");
+        jProgressBar1.setMinimumSize(new java.awt.Dimension(100, 25));
+        jProgressBar1.setString("backgroundOperation");
+        jProgressBar1.setStringPainted(true);
+
+        cancelBtn.setText("cancelBtn");
+        cancelBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelBtnActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout progressPanelLayout = new javax.swing.GroupLayout(progressPanel);
+        progressPanel.setLayout(progressPanelLayout);
+        progressPanelLayout.setHorizontalGroup(
+            progressPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(progressPanelLayout.createSequentialGroup()
+                .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(cancelBtn))
+        );
+        progressPanelLayout.setVerticalGroup(
+            progressPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(cancelBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+            .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE)
+            .addComponent(progressPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 315, Short.MAX_VALUE)
+                .addGap(0, 0, 0)
+                .addComponent(progressPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -125,12 +167,23 @@ public class DetectionPanel extends javax.swing.JPanel {
     private void regionsTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_regionsTableMouseClicked
         if(evt.getClickCount() >= 2) showRegionDetail();
     }//GEN-LAST:event_regionsTableMouseClicked
+
+    private void cancelBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelBtnActionPerformed
+        worker.cancelJob();
+    }//GEN-LAST:event_cancelBtnActionPerformed
+    
+    private void workerChangeListener(PropertyChangeEvent e){
+        System.out.println(e.getPropertyName()+": "+e.getOldValue().toString()+"->"+e.getNewValue().toString());
+        if("state".equals(e.getPropertyName())){
+            progressPanel.setVisible(e.getNewValue() == SwingWorker.StateValue.STARTED);
+        }
+    }
     
     public void showRegionsTable(boolean b) {
         tableScrollPane.setVisible(b);
         if(b) {
             splitPane.setDividerLocation(getHeight()/4*3);
-            parent.runBackgroundProcess("fillTable", this::fillTable);// (0)->{fillTable();});
+            worker.runInBackground(this::fillTable);// (0)->{fillTable();});
             //(<any> 0)->{fillTable();}
         }
     }
@@ -158,11 +211,13 @@ public class DetectionPanel extends javax.swing.JPanel {
         return tableScrollPane.isVisible();
     }
     
-    public void fillTable(){
-        regionsTable.setModel(detection.getImage().getRegionsTableModel());
-        
-        regionsTable.getColumnModel().getColumn(0).setWidth(30);
-        regionsTable.getColumnModel().getColumn(3).setWidth(60);
+    private void fillTable(){
+        //worker.runInBackground(()->{
+            regionsTable.setModel(detection.getImage().getRegionsTableModel());
+
+            regionsTable.getColumnModel().getColumn(0).setWidth(30);
+            regionsTable.getColumnModel().getColumn(3).setWidth(60);
+        //});
     }
     
     public void viewOriginalSize() {
@@ -176,19 +231,19 @@ public class DetectionPanel extends javax.swing.JPanel {
         canvas.setSize(imageScrollPane.getSize());
     }
     
-    public void detectRegions() {
+    /*public void detectRegions() {
         detection.startDetection();
-    }
+    }*/
     
     public void showLabels() {
-        parent.runBackgroundProcess("showLabels", ()->{
+        worker.runInBackground(()->{
             canvas.setImage(detection.getLabelsImage());
             canvas.repaint();
         });
     }
     
     public void showBackground() {
-        parent.runBackgroundProcess("showLabels", ()->{
+        worker.runInBackground(()->{
             canvas.setImage(detection.getBackgroundImage());
             canvas.repaint();
         });
@@ -200,8 +255,10 @@ public class DetectionPanel extends javax.swing.JPanel {
     }
     
     public void showRegions() {
-        canvas.displayRegions(detection.getImage().getRegionsPolygons(),Color.blue);
-        canvas.repaint();
+        worker.runInBackground(()->{
+            canvas.displayRegions(detection.getImage().getRegionsPolygons(),Color.blue);
+            canvas.repaint();
+        });
     }
     
     public void hideRegions() {
@@ -226,12 +283,15 @@ public class DetectionPanel extends javax.swing.JPanel {
         canvas.repaint();
     }
     
-    public JTable getRegionsTable() {
+    private JTable getRegionsTable() {
         return regionsTable;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JToggleButton cancelBtn;
     private javax.swing.JScrollPane imageScrollPane;
+    private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JPanel progressPanel;
     private javax.swing.JTable regionsTable;
     private javax.swing.JSplitPane splitPane;
     private javax.swing.JScrollPane tableScrollPane;
@@ -240,4 +300,5 @@ public class DetectionPanel extends javax.swing.JPanel {
     private Detection detection;
     private Canvas canvas;
     private MainWindow parent;
+    private QueuedWorker worker = new QueuedWorker();
 }

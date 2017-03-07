@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 
@@ -111,6 +112,7 @@ public class LabelImage extends BufferedImage{
     public void setLabel(int x, int y, int v){labels[x][y]=v;}
     
     public void separateBackground(){
+        progress.setName("separateBackground");
         ImageProcessing.floodFillSeparateBackground(this);
         separatedBackground = true;
         regions = null;
@@ -119,6 +121,8 @@ public class LabelImage extends BufferedImage{
     public BufferedImage getBackgroundImage(Color color) {
         if(!separatedBackground) separateBackground();
         if(backgroundImage != null) return backgroundImage;
+        progress.setName("backgroundImage");
+        AtomicInteger col = new AtomicInteger(0);
         BufferedImage backgroundImage = getCopyBufferedImage();
         int colorRGB = color.getRGB();
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
@@ -126,6 +130,7 @@ public class LabelImage extends BufferedImage{
                 if(getLabel(x, y) == 0)
                     backgroundImage.setRGB(x, y, colorRGB);
             }
+            progress.setValue(col.addAndGet(1)*1000/getWidth());
         });
         
         return backgroundImage;
@@ -139,6 +144,7 @@ public class LabelImage extends BufferedImage{
     
     public LabelImage getLabelsImage(List<Color> colors){
         if(!denotedRegions) denoteRegions();
+        progress.setName("getLabelsImage");
         // prepare IndexColorModel
         byte [] reds = new byte [colors.size()+1];
         byte [] greens = new byte [colors.size()+1];
@@ -157,6 +163,7 @@ public class LabelImage extends BufferedImage{
                 BufferedImage.TYPE_BYTE_INDEXED, cm);
         
         // draw labels into image
+        AtomicInteger col = new AtomicInteger(0);
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
             for(int y=0; y<getHeight(); y++){
                 li.labels[x][y] = labels[x][y];
@@ -165,6 +172,7 @@ public class LabelImage extends BufferedImage{
                 else 
                     li.setRGB(x, y, colors.get((labels[x][y]-1)%colors.size()).getRGB());
             }
+            progress.setValue(col.addAndGet(1)*1000/getWidth());
         });
         
         return li;
@@ -172,11 +180,13 @@ public class LabelImage extends BufferedImage{
         
     public List<Integer> getLabelsList(){
         if(!denotedRegions) denoteRegions();
+        progress.setName("getLabelsList");
         List<List<Integer>> inRow = new ArrayList<>(getWidth());
         
         IntStream.iterate(0, n->n+1).limit(getWidth())
                 .forEachOrdered(i->inRow.add(new ArrayList<>()));
         
+        AtomicInteger col = new AtomicInteger(0);
         IntStream.iterate(0, i->i+1).limit(getWidth()).parallel().forEach(x->{
             for(int y = 0; y < getHeight(); y++){
                 int ii = getLabel(x, y);
@@ -184,6 +194,7 @@ public class LabelImage extends BufferedImage{
                 Integer i = new Integer(ii);
                 if(!inRow.get(x).contains(i)) inRow.get(x).add(i);
             }
+            progress.setValue(col.addAndGet(1)*1000/getWidth());
         });
         
         List<Integer> uniqueLabels = new ArrayList<>();
@@ -198,6 +209,7 @@ public class LabelImage extends BufferedImage{
     
     public void denoteRegions(){
         if(!separatedBackground) separateBackground();
+        progress.setName("denoteRegions");
         AreaDetector.detectRegions(this);
         denotedRegions = true;
     }
@@ -206,11 +218,13 @@ public class LabelImage extends BufferedImage{
     
     public void makeRegionsList(){
         if(!denotedRegions) denoteRegions();
+        progress.setName("makeRegionsList");
         List<Integer> regionsLabels = getLabelsList();
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
         //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
         boolean disable1pixel = true;
         
+        AtomicInteger lbl = new AtomicInteger(0);
         regionsLabels.stream().parallel().forEach(label->{
             PointExtremes extremes = null;
             int area = 0;
@@ -234,6 +248,7 @@ public class LabelImage extends BufferedImage{
                 regions.add(new Region(this,label, area, extremes.getXmin(), 
                         extremes.getYmin(), extremes.getXmax(), 
                         extremes.getYmax(), center));
+            progress.setValue(lbl.addAndGet(1)*1000/regionsLabels.size());
         });
     }
     
@@ -261,10 +276,15 @@ public class LabelImage extends BufferedImage{
         return new RegionsTableModel(getRegions());
     }
     
+    public void setWorker(QueuedWorker worker){
+        progress.setWorker(worker);
+    }
+    
     protected final int [][] labels;
     protected List<Region> regions = null;
     protected boolean separatedBackground = false;
     protected boolean denotedRegions = false;
     protected BufferedImage backgroundImage;
     protected BufferedImage labelsImage;
+    protected QueuedWorker.Progress progress = new QueuedWorker.Progress();
 }
