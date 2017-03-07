@@ -24,8 +24,12 @@
 package detektorklicu;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.util.List;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.table.TableModel;
 
 /**
  *
@@ -87,6 +91,11 @@ public class DetectionPanel extends javax.swing.JPanel {
 
             }
         ));
+        regionsTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                regionsTableMouseClicked(evt);
+            }
+        });
         tableScrollPane.setViewportView(regionsTable);
 
         splitPane.setBottomComponent(tableScrollPane);
@@ -112,6 +121,10 @@ public class DetectionPanel extends javax.swing.JPanel {
         //tableHidden = false;
         //fillTable();
     }//GEN-LAST:event_tableScrollPaneComponentResized
+
+    private void regionsTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_regionsTableMouseClicked
+        if(evt.getClickCount() >= 2) showRegionDetail();
+    }//GEN-LAST:event_regionsTableMouseClicked
     
     public void showRegionsTable(boolean b) {
         tableScrollPane.setVisible(b);
@@ -123,7 +136,26 @@ public class DetectionPanel extends javax.swing.JPanel {
     }
     
     public void toggleRegionsTable(){
-        showRegionsTable(!tableScrollPane.isVisible());
+        showRegionsTable(!isRegionsTableShown());
+    }
+    
+    private Region getSelectedRegion(){
+        int row = regionsTable.getSelectedRow();
+        if(row >= 0){
+            TableModel model = regionsTable.getModel();
+            if(model instanceof RegionsTableModel){
+                return ((RegionsTableModel) model).getRegionAt(row);
+            }
+        }
+        return null;
+    }
+    
+    public boolean isSelectedRegion(){
+        return false;
+    }
+
+    public boolean isRegionsTableShown() {
+        return tableScrollPane.isVisible();
     }
     
     public void fillTable(){
@@ -173,13 +205,25 @@ public class DetectionPanel extends javax.swing.JPanel {
     }
     
     public void hideRegions() {
-        canvas.displayRegions(null,Color.blue);
+        canvas.hideRegions();
         canvas.repaint();
     }
     
     public void toggleRegions() {
         if(canvas.showingRegions()) hideRegions();
         else showRegions();
+    }
+    
+    public void showRegionDetail() {
+        Region region = getSelectedRegion();
+        if(region == null) return;
+        StringBuilder sb = new StringBuilder();
+        sb.append("thetha=").append(region.getOrientation()).append("\n")
+                .append("a=").append(region.getHalfAxisA()).append("\n")
+                .append("b=").append(region.getHalfAxisB()).append("\n");
+        JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
+        canvas.displayRegions(region.getBoundingRectangle(),Color.blue);
+        canvas.repaint();
     }
     
     public JTable getRegionsTable() {

@@ -207,4 +207,8 @@ class MainMenu{
         viewMenu.setEnabled(b);
         toolsMenu.setEnabled(b);
     }
+    
+    public void enableRegionsActions(boolean b){
+        toolRegionDetail.setEnabled(b);
+    }
 }

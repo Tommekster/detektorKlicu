@@ -68,8 +68,19 @@ class Canvas extends JPanel{
         displayRegions(polygons);
     }
     
+    public void displayRegions(Polygon polygon, Color c){
+        List<Polygon> polygons = new ArrayList<>();
+        polygons.add(polygon);
+        polygonsColor = c;
+        displayRegions(polygons);
+    }
+    
     public void displayRegions(List<Polygon> polygons){
         this.polygons = polygons;
+    }
+    
+    public void hideRegions(){
+        polygons = null;
     }
     
     public boolean showingRegions(){

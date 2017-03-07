@@ -107,79 +107,51 @@ public class MainWindow extends JFrame{
     }
     
     public void viewOriginalSize(ActionEvent e) {
-        if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        DetectionPanel d = (DetectionPanel) getActiveComponent();
-        d.viewOriginalSize();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
+        detPane.viewOriginalSize();
     }
     
     public void viewScalled(ActionEvent e) {
-         if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        DetectionPanel d = (DetectionPanel) getActiveComponent();
-        d.viewScalledSize();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
+        detPane.viewScalledSize();
     }
     
     public void toolShowOriginal(ActionEvent e) {
-        if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        
-        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
         detPane.showOriginal();
     }
     
     public void toolShowBackground(ActionEvent e) {
-        if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        
-        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
         detPane.showBackground();
     }
     
     public void toolShowLabels(ActionEvent e){
-        if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        
-        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
         detPane.showLabels();
     }
     
     public void toolRegionsList(ActionEvent e) {
-        if(!(getActiveComponent() instanceof DetectionPanel)) return;
-        
-        DetectionPanel detPane = (DetectionPanel) getActiveComponent();
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
         detPane.toggleRegionsTable();
     }
     
     public void toolShowRegionsBounds(ActionEvent e){
-        Component c = tabsPane.getSelectedComponent();
-        if(c instanceof DetectionPanel){
-            process = new Process(l.tr("evalToolShowRegionsBounds")) {
-
-                @Override
-                public void action() {
-                    ((DetectionPanel)c).toggleRegions();
-                }
-            };
-            process.execute();
-        }
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
+        detPane.toggleRegions();
     }
     
     public void toolRegionDetail(ActionEvent e) {
-        Component c = tabsPane.getSelectedComponent();
-        if(c instanceof DetectionPanel){
-           Component table = ((DetectionPanel)c).getRegionsTable();
-           if(table instanceof JTable) {
-               int row = ((JTable) table).getSelectedRow();
-               if(row >= 0){
-                   TableModel model = ((JTable) table).getModel();
-                   if(model instanceof RegionsTableModel){
-                       Region region = ((RegionsTableModel) model).getRegionAt(row);
-                       StringBuilder sb = new StringBuilder();
-                       sb.append("thetha=").append(region.getOrientation()).append("\n")
-                               .append("a=").append(region.getHalfAxisA()).append("\n")
-                               .append("b=").append(region.getHalfAxisB()).append("\n");
-                       JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
-                       region.drawBoundingRectangle(Color.blue);
-                   }
-               }
-           }
-        }
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
+        detPane.showRegionDetail();
     }
     
     public void helpAbout(ActionEvent e){
@@ -233,8 +205,15 @@ public class MainWindow extends JFrame{
         return getActiveComponent() instanceof DetectionPanel;
     }
     
+    private DetectionPanel getActiveDetectionPane(){
+        if(!activeIsDetectionPanel()) return null;
+        return (DetectionPanel) getActiveComponent();
+    }
+    
     private void checkPossibleActions(){
         mainMenu.enableImageActions(activeIsDetectionPanel());
+        DetectionPanel detPane = getActiveDetectionPane();
+        mainMenu.enableRegionsActions((detPane == null)?false:detPane.isRegionsTableShown());
     }
     
     /** raise the event if active tabs is changed */
