@@ -29,6 +29,8 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
 /**
@@ -40,6 +42,7 @@ public class DetectionPanel extends javax.swing.JPanel {
     /**
      * Creates new form DetectionPanel
      * @param detection 
+     * @param parent 
      */
     public DetectionPanel(Detection detection, MainWindow parent) {
         this.detection = detection;
@@ -53,6 +56,16 @@ public class DetectionPanel extends javax.swing.JPanel {
         
         detection.getImage().setWorker(worker);
         worker.addPropertyChangeListener(this::workerChangeListener);
+        
+        regionsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                Region region = getSelectedRegion();
+                if(region == null) return;
+                canvas.displayRegions(region.getBoundingRectangle(),Color.green);
+                canvas.repaint();
+            }
+        });
     }
 
     /**
@@ -72,20 +85,8 @@ public class DetectionPanel extends javax.swing.JPanel {
         progressBar = new javax.swing.JProgressBar();
         cancelBtn = new javax.swing.JToggleButton();
 
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                formComponentResized(evt);
-            }
-        });
-
         splitPane.setDividerLocation(splitPane.getHeight());
         splitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-
-        tableScrollPane.addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                tableScrollPaneComponentResized(evt);
-            }
-        });
 
         regionsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -153,15 +154,6 @@ public class DetectionPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void formComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentResized
-        //if(regionsTableHidden) hideTable();
-    }//GEN-LAST:event_formComponentResized
-
-    private void tableScrollPaneComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_tableScrollPaneComponentResized
-        //tableHidden = false;
-        //fillTable();
-    }//GEN-LAST:event_tableScrollPaneComponentResized
-
     private void regionsTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_regionsTableMouseClicked
         if(evt.getClickCount() >= 2) showRegionDetail();
     }//GEN-LAST:event_regionsTableMouseClicked
@@ -215,12 +207,10 @@ public class DetectionPanel extends javax.swing.JPanel {
     }
     
     private void fillTable(){
-        //worker.runInBackground(()->{
-            regionsTable.setModel(detection.getImage().getRegionsTableModel());
+        regionsTable.setModel(detection.getImage().getRegionsTableModel());
 
-            regionsTable.getColumnModel().getColumn(0).setWidth(30);
-            regionsTable.getColumnModel().getColumn(3).setWidth(60);
-        //});
+        regionsTable.getColumnModel().getColumn(0).setWidth(30);
+        regionsTable.getColumnModel().getColumn(3).setWidth(60);
     }
     
     public void viewOriginalSize() {
@@ -282,8 +272,7 @@ public class DetectionPanel extends javax.swing.JPanel {
                 .append("a=").append(region.getHalfAxisA()).append("\n")
                 .append("b=").append(region.getHalfAxisB()).append("\n");
         JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
-        canvas.displayRegions(region.getBoundingRectangle(),Color.blue);
-        canvas.repaint();
+        
     }
     
     private JTable getRegionsTable() {
