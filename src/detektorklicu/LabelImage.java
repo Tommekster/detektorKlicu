@@ -123,7 +123,7 @@ public class LabelImage extends BufferedImage{
         if(backgroundImage != null) return backgroundImage;
         progress.setName("backgroundImage");
         AtomicInteger col = new AtomicInteger(0);
-        BufferedImage backgroundImage = getCopyBufferedImage();
+        backgroundImage = getCopyBufferedImage();
         int colorRGB = color.getRGB();
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
             for(int y=0; y<getHeight(); y++){
@@ -144,7 +144,7 @@ public class LabelImage extends BufferedImage{
     
     public LabelImage getLabelsImage(List<Color> colors){
         if(!denotedRegions) denoteRegions();
-        progress.setName("getLabelsImage");
+        progress.setName("labelsImage");
         // prepare IndexColorModel
         byte [] reds = new byte [colors.size()+1];
         byte [] greens = new byte [colors.size()+1];
@@ -218,8 +218,8 @@ public class LabelImage extends BufferedImage{
     
     public void makeRegionsList(){
         if(!denotedRegions) denoteRegions();
-        progress.setName("makeRegionsList");
         List<Integer> regionsLabels = getLabelsList();
+        progress.setName("makeRegionsList");
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
         //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
         boolean disable1pixel = true;

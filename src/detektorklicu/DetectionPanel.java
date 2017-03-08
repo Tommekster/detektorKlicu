@@ -24,10 +24,8 @@
 package detektorklicu;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
-import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
@@ -71,7 +69,7 @@ public class DetectionPanel extends javax.swing.JPanel {
         regionsTable = new javax.swing.JTable();
         imageScrollPane = new javax.swing.JScrollPane();
         progressPanel = new javax.swing.JPanel();
-        jProgressBar1 = new javax.swing.JProgressBar();
+        progressBar = new javax.swing.JProgressBar();
         cancelBtn = new javax.swing.JToggleButton();
 
         addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -110,11 +108,11 @@ public class DetectionPanel extends javax.swing.JPanel {
         splitPane.setBottomComponent(tableScrollPane);
         splitPane.setLeftComponent(imageScrollPane);
 
-        jProgressBar1.setMaximum(1000);
-        jProgressBar1.setToolTipText("");
-        jProgressBar1.setMinimumSize(new java.awt.Dimension(100, 25));
-        jProgressBar1.setString("backgroundOperation");
-        jProgressBar1.setStringPainted(true);
+        progressBar.setMaximum(1000);
+        progressBar.setToolTipText("");
+        progressBar.setMinimumSize(new java.awt.Dimension(100, 25));
+        progressBar.setString("backgroundOperation");
+        progressBar.setStringPainted(true);
 
         cancelBtn.setText("cancelBtn");
         cancelBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -128,14 +126,14 @@ public class DetectionPanel extends javax.swing.JPanel {
         progressPanelLayout.setHorizontalGroup(
             progressPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(progressPanelLayout.createSequentialGroup()
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cancelBtn))
         );
         progressPanelLayout.setVerticalGroup(
             progressPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(cancelBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
-            .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
@@ -173,9 +171,14 @@ public class DetectionPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_cancelBtnActionPerformed
     
     private void workerChangeListener(PropertyChangeEvent e){
-        System.out.println(e.getPropertyName()+": "+e.getOldValue().toString()+"->"+e.getNewValue().toString());
         if("state".equals(e.getPropertyName())){
             progressPanel.setVisible(e.getNewValue() == SwingWorker.StateValue.STARTED);
+        }
+        else if("progressName".equals(e.getPropertyName())){
+            progressBar.setString(worker.getProgressText((String)e.getNewValue()));
+        }
+        else if("progressValue".equals(e.getPropertyName())){
+            progressBar.setValue((int)e.getNewValue());
         }
     }
     
@@ -290,7 +293,7 @@ public class DetectionPanel extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToggleButton cancelBtn;
     private javax.swing.JScrollPane imageScrollPane;
-    private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JProgressBar progressBar;
     private javax.swing.JPanel progressPanel;
     private javax.swing.JTable regionsTable;
     private javax.swing.JSplitPane splitPane;

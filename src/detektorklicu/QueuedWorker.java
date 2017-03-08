@@ -23,79 +23,109 @@
  */
 package detektorklicu;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.MissingResourceException;
 import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+import javax.swing.SwingWorker.StateValue;
 
 /**
  *
  * @author zikmuto2
  */
-public class QueuedWorker extends SwingWorker<Void, String>{
+public class QueuedWorker{
     
-    Queue<ActionIface> queue = new ConcurrentLinkedQueue<>();
+    Queue<TaskIface> queue = new ConcurrentLinkedQueue<>();
     String progressName = "backgroundOperation";
     int progressValue = 0;
     ExceptionMessage exceptionMessage;
-
-    @Override
-    protected Void doInBackground() throws Exception {
-        if(!queue.isEmpty()){
-            ActionIface action = queue.poll();
-            try{
-                action.action();
-            }catch(ExceptionMessage e){
-                setExceptionMessage(e);
+    PropertyChangeSupport changes = new PropertyChangeSupport(this);
+    SwingWorker<Void, Void> worker;
+    
+    void addPropertyChangeListener(PropertyChangeListener pcl){
+        changes.addPropertyChangeListener(pcl);
+    }
+    
+    protected void startNext() {
+        if(worker != null && worker.getState() != StateValue.DONE) return;
+        if(hasDone()) return;
+        TaskIface task = queue.poll();
+        worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try{
+                    task.action();
+                }catch(ExceptionMessage e){
+                    setExceptionMessage(e);
+                }
+                return null;
             }
-        }
-        return null;
+        };
+        worker.addPropertyChangeListener(e->{
+            changes.firePropertyChange(e);
+            if("state".equals(e.getPropertyName()) && e.getNewValue() == StateValue.DONE) {
+                done();
+            }
+        });
+        worker.execute();
     }
     
     void cancelJob(){
-        cancel(true);
+        if(worker != null) worker.cancel(true);
     }
     
-    @Override
     protected void done(){
-        if(!queue.isEmpty()) execute();
+        execute();
     }
     
     boolean hasDone() {
         return queue.isEmpty();
     }
     
-    void runInBackground(ActionIface action) {
-        queue.add(action);
-        if(getState() != StateValue.STARTED) execute();
-        //if(getState() == StateValue.DONE) stat
+    void execute(){
+        if(hasDone()) return;
+        if(worker != null && worker.getState() == StateValue.PENDING) 
+            worker.execute();
+        startNext();
+        
+        setProgressName("taskStarted");
+        setProgressVal(0);
+    }
+    
+    void runInBackground(TaskIface task) {
+        queue.add(task);
+        execute();
     }
     
     void setProgressVal(int i){
-        firePropertyChange("progressValue", progressValue, i);
+        changes.firePropertyChange("progressValue", progressValue, i);
         progressValue = i;
     }
     int getProgressVal(){return progressValue;}
     void setProgressName(String s){
-        firePropertyChange("progressName", progressName, s);
+        changes.firePropertyChange("progressName", progressName, s);
         progressName = s;
     }
     String getProgressText(){
+        return getProgressText(progressName);
+    }
+    String getProgressText(String textBundle){
         try{
-            return ResourceBundle.getBundle("texts/QueuedWorker").getString(progressName);
+            return ResourceBundle.getBundle("texts/QueuedWorker").getString(textBundle);
         }catch(MissingResourceException ex){
             return progressName;
         }
     }
     protected void setExceptionMessage(ExceptionMessage e){
-        firePropertyChange("exceptionMessage", exceptionMessage, e);
+        changes.firePropertyChange("exceptionMessage", exceptionMessage, e);
         exceptionMessage = e;
     }
             
     
-    static abstract interface ActionIface{
+    static abstract interface TaskIface{
         public abstract void action() throws ExceptionMessage;
     }
     
