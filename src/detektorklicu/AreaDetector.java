@@ -24,7 +24,10 @@
 package detektorklicu;
 
 import java.awt.Point;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -36,7 +39,10 @@ public class AreaDetector {
     private final LabelImage image;
     int label = 2;
     List<Point> collisions;
+    List<List<Integer>> repre;
     boolean fourEnviron = true;
+    int progress = 0;
+    PropertyChangeSupport changes = new PropertyChangeSupport(this);
     
     /**
      * Prepares AreaDetector for labelled image with separated background
@@ -44,6 +50,7 @@ public class AreaDetector {
      */
     public AreaDetector(LabelImage image){
         collisions = new ArrayList<>();
+        repre = new LinkedList<>();
         this.image = image;
     }
     
@@ -69,8 +76,10 @@ public class AreaDetector {
             for(int x = 0; x < w; x++) {
                 detectAndLabel(x,y);
             }
+            setProgress(y*1000/h);
         }
         
+        dumpCollisionLeaves();
         findCollisionLeaves();
         agglomerateRegions();
     }
@@ -93,7 +102,7 @@ public class AreaDetector {
                 if(label == 0) label = ns[i];
                 if(label != ns[i]){
                     sameNeighbours = false;
-                    int bigger;
+                    /*int bigger;
                     int lower;
                     if(label > ns[i]){
                         bigger = label;
@@ -103,7 +112,8 @@ public class AreaDetector {
                         bigger = ns[i];
                         lower = label;
                     }
-                    if(v != 0) addCollision(new Point(lower, bigger));
+                    if(v != 0) addCollision(new Point(lower, bigger));*/
+                    if(v != 0) union(label, ns[i]);
                 }
             }
         }
@@ -147,10 +157,62 @@ public class AreaDetector {
         collisions.add(p);
     }
     
+    private int union(int u, int v){
+        List<Integer> cu = findComponent(u);
+        List<Integer> cv = findComponent(v);
+        if(cu == null){
+            if(cv == null){
+                List<Integer> nl = new LinkedList<>();
+                nl.add(u);
+                nl.add(v);
+                repre.add(nl);
+                return Math.min(u, v);
+            }else{ /* cv != null */
+                cv.add(u);
+                return findMin(cv);
+            }
+        }else{ /* cu != null */
+            if(cv == null){
+                cu.add(v);
+            }else{ /* cu != null && cv != null */
+                cu.addAll(cv);
+                repre.remove(cv);
+            }
+            return findMin(cu);
+        }
+    }
+    private List<Integer> findComponent(int i){
+        for(List<Integer> c : repre){
+            if(c.contains(i)) return c;
+        }
+        return null;
+    }
+    private int findMin(List<Integer> list){
+        int min = list.get(0);
+        for(int i : list){
+            if(i<min) min = i;
+        }
+        return min;
+    }
+    
+    
+    private void dumpCollisionLeaves(){
+        System.out.println("edges:");
+        for(Point c : collisions){
+            System.out.println(c.x+"\t"+c.y);
+        }
+        System.out.println("repre-lists:");
+        for(List<Integer> l : repre){
+            for(int i : l) System.out.print(i+" ");
+            System.out.print("\n");
+        }
+    }
+    
     /**
      * collisions contains edges of the graph the depending subareas
      */
     // TODO: zjistit lepsi algoritmus
+    // Union-find
     private void findCollisionLeaves(){
         for(Point c : collisions){
             for(int j = 0; j < collisions.size(); j++){
@@ -172,5 +234,15 @@ public class AreaDetector {
                         }
                     });
         });
+    }
+    
+    private void setProgress(int i){
+        changes.firePropertyChange("progress", progress, progress = i);
+    }
+    public void addPropertyChangeListener(PropertyChangeListener listener){
+        changes.addPropertyChangeListener(listener);
+    }
+    public void addPropertyChangeListener(String property, PropertyChangeListener listener){
+        changes.addPropertyChangeListener(property, listener);
     }
 }
