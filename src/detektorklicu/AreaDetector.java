@@ -113,7 +113,7 @@ public class AreaDetector {
                         lower = label;
                     }
                     if(v != 0) addCollision(new Point(lower, bigger));*/
-                    if(v != 0) union(label, ns[i]);
+                    if(v != 0) label = union(label, ns[i]);
                 }
             }
         }
