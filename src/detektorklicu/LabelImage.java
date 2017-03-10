@@ -210,7 +210,11 @@ public class LabelImage extends BufferedImage{
     public void denoteRegions(){
         if(!separatedBackground) separateBackground();
         progress.setName("denoteRegions");
-        AreaDetector.detectRegions(this);
+        AreaDetector detector = new AreaDetector(this);
+        detector.addPropertyChangeListener("progress",(e)->{
+            progress.setValue((int) e.getNewValue());
+        });
+        detector.detectRegions();
         denotedRegions = true;
     }
     
