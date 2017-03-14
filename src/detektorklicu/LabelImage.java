@@ -108,6 +108,23 @@ public class LabelImage extends BufferedImage{
         return colors;
     }
     
+    public void resetDetection(){
+        progress.setName("clearLabels");
+        
+        AtomicInteger col = new AtomicInteger(0);
+        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel()
+                .forEach(x->{
+                        for(int y=0; y<getHeight();y++)setLabel(x, y, 1);
+                        progress.setValue(col.addAndGet(1)*1000/getWidth());
+                    }
+                );
+        regions = null;
+        separatedBackground = false;
+        denotedRegions = false;
+        backgroundImage = null;
+        labelsImage = null;
+    }
+    
     public int getLabel(int x, int y){return labels[x][y];}
     public void setLabel(int x, int y, int v){labels[x][y]=v;}
     

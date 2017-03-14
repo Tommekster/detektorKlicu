@@ -67,6 +67,10 @@ public class Detection {
         image.denoteRegions();
     }
     
+    public void resetDetection(){
+        image.resetDetection();
+    }
+    
     public BufferedImage getLabelsImage() {
         return image.getLabelsImage();
     }

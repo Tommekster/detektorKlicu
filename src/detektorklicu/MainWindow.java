@@ -23,7 +23,6 @@
  */
 package detektorklicu;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -35,19 +34,13 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.TableModel;
 
 /** Hlavni okno
  * Hlavni okno programu Deterktor klicu
@@ -64,7 +57,7 @@ public class MainWindow extends JFrame{
     
     public MainWindow(){
         super();
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        super.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         initialization();
     }
     
@@ -122,6 +115,12 @@ public class MainWindow extends JFrame{
         DetectionPanel detPane = getActiveDetectionPane();
         if(detPane == null) return;
         detPane.showOriginal();
+    }
+    
+    public void toolResetDetection(ActionEvent e) {
+        DetectionPanel detPane = getActiveDetectionPane();
+        if(detPane == null) return;
+        detPane.resetDetection();
     }
     
     public void toolShowBackground(ActionEvent e) {

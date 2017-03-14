@@ -63,6 +63,7 @@ class MainMenu{
     private final JMenuItem viewScalled = new JMenuItem();
     
     private final JMenu toolsMenu = new JMenu();
+    private final JMenuItem toolResetDetection = new JMenuItem();
     private final JMenuItem toolShowOriginal = new JMenuItem();
     private final JMenuItem toolShowBackground = new JMenuItem();
     private final JMenuItem toolShowLabels = new JMenuItem();
@@ -110,6 +111,7 @@ class MainMenu{
         addMenuItem(viewScalled, e->window.viewScalled(e));
         
         addMenu(toolsMenu);
+        addMenuItem(toolResetDetection, e->window.toolResetDetection(e));
         addMenuItem(toolShowOriginal, e->window.toolShowOriginal(e));
         addMenuItem(toolShowBackground, e->window.toolShowBackground(e));
         addMenuItem(toolShowLabels, e->window.toolShowLabels(e));

@@ -272,7 +272,14 @@ public class DetectionPanel extends javax.swing.JPanel {
                 .append("a=").append(region.getHalfAxisA()).append("\n")
                 .append("b=").append(region.getHalfAxisB()).append("\n");
         JOptionPane.showMessageDialog(this, sb.toString(), "Detail", JOptionPane.INFORMATION_MESSAGE);
-        
+    }
+    
+    public void resetDetection() {
+        worker.runInBackground(()->{
+            hideRegions();
+            showOriginal();
+            detection.resetDetection();
+        });
     }
     
     private JTable getRegionsTable() {
