@@ -29,6 +29,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.stream.IntStream;
 
 /**
@@ -38,8 +39,7 @@ import java.util.stream.IntStream;
 public class AreaDetector {
     private final LabelImage image;
     int label = 2;
-    List<Point> collisions;
-    List<List<Integer>> repre;
+    List<TreeSet<Integer>> repre;
     boolean fourEnviron = true;
     int progress = 0;
     PropertyChangeSupport changes = new PropertyChangeSupport(this);
@@ -49,7 +49,6 @@ public class AreaDetector {
      * @param image 
      */
     public AreaDetector(LabelImage image){
-        collisions = new ArrayList<>();
         repre = new LinkedList<>();
         this.image = image;
     }
@@ -79,8 +78,7 @@ public class AreaDetector {
             setProgress(y*1000/h);
         }
         
-        dumpCollisionLeaves();
-        findCollisionLeaves();
+        //dumpCollisionLeaves();
         agglomerateRegions();
     }
     
@@ -93,33 +91,21 @@ public class AreaDetector {
         int [] ns = neighbors(x, y);
         int v = image.getLabel(x, y);
         int label = 0;
-        boolean sameNeighbours = true;
         
-        // if there is a label in neighborhood it is eventually propagated
-        // if there are more labels the lower is propagated and collision is marked
-        for(int i = 0; i < 4; i++) {
-            if(ns[i] != 0) {
-                if(label == 0) label = ns[i];
-                if(label != ns[i]){
-                    sameNeighbours = false;
-                    /*int bigger;
-                    int lower;
-                    if(label > ns[i]){
-                        bigger = label;
-                        lower = ns[i];
-                        label = lower;
-                    }else{
-                        bigger = ns[i];
-                        lower = label;
+        if(v != 0) { // current label is not background
+            
+            // if there is one label in neighborhood it is eventually propagated
+            // if there are more labels the lower is propagated and collision is marked
+            for(int i = 0; i < 4; i++) {
+                if(ns[i] != 0) {
+                    if(label == 0) label = ns[i];
+                    if(label != ns[i]){ // collision
+                        label = union(label, ns[i]);
                     }
-                    if(v != 0) addCollision(new Point(lower, bigger));*/
-                    if(v != 0) label = union(label, ns[i]);
                 }
             }
-        }
         
-        if(v != 0) {
-            if(label == 0) label = this.label++;
+            if(label == 0) label = this.label++; // no other label is propagated
             image.setLabel(x, y, label);
         }
     }
@@ -152,21 +138,16 @@ public class AreaDetector {
         return values;
     }
     
-    private void addCollision(Point p){
-        if(collisions.contains(p)) return;
-        collisions.add(p);
-    }
-    
     private int union(int u, int v){
-        List<Integer> cu = findComponent(u);
-        List<Integer> cv = findComponent(v);
+        TreeSet<Integer> cu = findComponent(u);
+        TreeSet<Integer> cv = findComponent(v);
         if(cu == null){
             if(cv == null){
-                List<Integer> nl = new LinkedList<>();
+                TreeSet<Integer> nl = new TreeSet<>();
                 nl.add(u);
                 nl.add(v);
                 repre.add(nl);
-                return Math.min(u, v);
+                return nl.first();
             }else{ /* cv != null */
                 cv.add(u);
                 return findMin(cv);
@@ -174,66 +155,47 @@ public class AreaDetector {
         }else{ /* cu != null */
             if(cv == null){
                 cu.add(v);
-            }else{ /* cu != null && cv != null */
+            }else if(cu != cv) { /* cu != null && cv != null */
                 cu.addAll(cv);
                 repre.remove(cv);
             }
             return findMin(cu);
         }
     }
-    private List<Integer> findComponent(int i){
-        for(List<Integer> c : repre){
+    private void dumpComponent(TreeSet<Integer> list){
+        System.out.print("{");
+        for(int i: list){
+            System.out.print(i+" ");
+        }
+        System.out.println("} represented by "+findMin(list));
+    }
+    private TreeSet<Integer> findComponent(int i){
+        for(TreeSet<Integer> c : repre){
             if(c.contains(i)) return c;
         }
         return null;
     }
-    private int findMin(List<Integer> list){
-        int min = list.get(0);
-        for(int i : list){
-            if(i<min) min = i;
-        }
-        return min;
+    private int findMin(TreeSet<Integer> list){
+        return list.first();
     }
     
     
     private void dumpCollisionLeaves(){
-        System.out.println("edges:");
-        for(Point c : collisions){
-            System.out.println(c.x+"\t"+c.y);
-        }
         System.out.println("repre-lists:");
-        for(List<Integer> l : repre){
-            for(int i : l) System.out.print(i+" ");
-            System.out.print("\n");
-        }
-    }
-    
-    /**
-     * collisions contains edges of the graph the depending subareas
-     */
-    // TODO: zjistit lepsi algoritmus
-    // Union-find
-    private void findCollisionLeaves(){
-        for(Point c : collisions){
-            for(int j = 0; j < collisions.size(); j++){
-                if(collisions.get(j).y == c.x) { // has parent
-                    c.x = collisions.get(j).x;
-                    j = -1;
-                }
-            }
+        for(TreeSet<Integer> l : repre){
+            dumpComponent(l);
         }
     }
     
     private void agglomerateRegions(){
-        collisions.forEach((c) -> {
-            IntStream.iterate(0, i->i+1).limit(image.getWidth()).parallel()
-                    .forEach(x->{
-                        for(int y = 0; y < image.getHeight(); y++){
-                            if(c.y == image.getLabel(x, y))
-                                image.setLabel(x, y, c.x);
-                        }
-                    });
-        });
+        IntStream.iterate(0, i->i+1).limit(image.getWidth()).parallel()
+                .forEach(x->{
+                    for(int y = 0; y < image.getHeight(); y++){
+                        TreeSet<Integer> comp = findComponent(image.getLabel(x,y));
+                        if(comp != null) 
+                            image.setLabel(x, y, findMin(comp));
+                    }
+                });
     }
     
     private void setProgress(int i){
