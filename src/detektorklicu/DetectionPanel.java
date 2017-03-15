@@ -47,9 +47,9 @@ public class DetectionPanel extends javax.swing.JPanel {
     public DetectionPanel(Detection detection, MainWindow parent) {
         this.detection = detection;
         this.canvas = new Canvas(detection.getOriginal());
-        this.parent = parent;
         initComponents();
         
+        setName(detection.getFilename());
         imageScrollPane.setViewportView(canvas);
         tableScrollPane.setVisible(false);
         progressPanel.setVisible(false);
@@ -213,15 +213,21 @@ public class DetectionPanel extends javax.swing.JPanel {
         regionsTable.getColumnModel().getColumn(3).setWidth(60);
     }
     
-    public void viewOriginalSize() {
-        Dimension d = new Dimension(detection.getOriginal().getWidth(), detection.getOriginal().getHeight());
-        canvas.setPreferredSize(d);
-        canvas.setSize(d);
+    public void setZoom(int size) {
+        if(size > 0) {
+            Dimension d = new Dimension(detection.getOriginal().getWidth()*size/100, detection.getOriginal().getHeight()*size/100);
+            canvas.setPreferredSize(d);
+            canvas.setSize(d);
+            zoomSize = size;
+        } else {
+            canvas.setPreferredSize(null);
+            canvas.setSize(imageScrollPane.getSize());
+            zoomSize = -1;
+        }
     }
     
     public void viewScalledSize() {
-        canvas.setPreferredSize(null);
-        canvas.setSize(imageScrollPane.getSize());
+        setZoom(-1);
     }
     
     /*public void detectRegions() {
@@ -298,6 +304,6 @@ public class DetectionPanel extends javax.swing.JPanel {
 
     private Detection detection;
     private Canvas canvas;
-    private MainWindow parent;
     private QueuedWorker worker = new QueuedWorker();
+    private int zoomSize = -1;
 }

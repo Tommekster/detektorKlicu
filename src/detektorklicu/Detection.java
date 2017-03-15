@@ -54,6 +54,10 @@ public class Detection {
         return d;
     }
     
+    public String getFilename(){
+        return originalFilename;
+    }
+    
     public BufferedImage getOriginal() {
         return (BufferedImage) image;
     }

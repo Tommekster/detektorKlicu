@@ -59,7 +59,13 @@ class MainMenu{
     private final JMenuItem detectionRegions = new JMenuItem();*/
 
     private final JMenu viewMenu = new JMenu();
-    private final JMenuItem viewOriginalSize = new JMenuItem();
+    private final JMenuItem view25Size = new JMenuItem();
+    private final JMenuItem view33Size = new JMenuItem();
+    private final JMenuItem view50Size = new JMenuItem();
+    private final JMenuItem view100Size = new JMenuItem();
+    private final JMenuItem view200Size = new JMenuItem();
+    private final JMenuItem view300Size = new JMenuItem();
+    private final JMenuItem view400Size = new JMenuItem();
     private final JMenuItem viewScalled = new JMenuItem();
     
     private final JMenu toolsMenu = new JMenu();
@@ -107,17 +113,27 @@ class MainMenu{
         //addMenuItem(detectionRegions, e->window.detectRegions(e));
         
         addMenu(viewMenu);
-        addMenuItem(viewOriginalSize, e->window.viewOriginalSize(e));
+        addMenuItem(view25Size, e->window.viewSetZoomSize(e,25));
+        addMenuItem(view33Size, e->window.viewSetZoomSize(e,33));
+        addMenuItem(view50Size, e->window.viewSetZoomSize(e,50));
+        addSeparator();
+        addMenuItem(view100Size, e->window.viewSetZoomSize(e,100));
+        addSeparator();
+        addMenuItem(view200Size, e->window.viewSetZoomSize(e,200));
+        addMenuItem(view300Size, e->window.viewSetZoomSize(e,300));
+        addMenuItem(view400Size, e->window.viewSetZoomSize(e,400));
+        addSeparator();
         addMenuItem(viewScalled, e->window.viewScalled(e));
         
         addMenu(toolsMenu);
         addMenuItem(toolResetDetection, e->window.toolResetDetection(e));
+        addSeparator();
         addMenuItem(toolShowOriginal, e->window.toolShowOriginal(e));
         addMenuItem(toolShowBackground, e->window.toolShowBackground(e));
         addMenuItem(toolShowLabels, e->window.toolShowLabels(e));
-        addMenuItem(toolRegionsList, e->window.toolRegionsList(e));
         addMenuItem(toolShowRegionsBounds, e->window.toolShowRegionsBounds(e));
         addSeparator();
+        addMenuItem(toolRegionsList, e->window.toolRegionsList(e));
         addMenuItem(toolRegionDetail, e->window.toolRegionDetail(e));
         
         

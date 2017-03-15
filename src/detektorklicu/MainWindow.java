@@ -34,8 +34,11 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
@@ -99,10 +102,10 @@ public class MainWindow extends JFrame{
         closeProgram();
     }
     
-    public void viewOriginalSize(ActionEvent e) {
+    public void viewSetZoomSize(ActionEvent e, int size) {
         DetectionPanel detPane = getActiveDetectionPane();
         if(detPane == null) return;
-        detPane.viewOriginalSize();
+        detPane.setZoom(size);
     }
     
     public void viewScalled(ActionEvent e) {
@@ -160,8 +163,9 @@ public class MainWindow extends JFrame{
     private void newDetection(File file){
         try {
             DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file),this);
-            tabsPane.add(file.getName(), detectionPane);
-            //detectionPane.detectRegions();
+            tabsPane.add(detectionPane);
+            tabsPane.setSelectedComponent(detectionPane);
+                    
         } catch (ExceptionMessage ex) {
             ex.displayMessage(this/*.workerDialog*/);
         }
@@ -300,15 +304,6 @@ public class MainWindow extends JFrame{
             }
                 
         }
-    }
-    
-    /** setter pro obrazek do kresliciho panelu
-     * @param obrazek obrazek k nakresleni
-     */
-    private void addImage(BufferedImage obrazek){
-        //canvas.setImage(obrazek);
-        tabsPane.addTab(l.tr("sourceImage"), new Canvas(obrazek));
-        checkPossibleActions();
     }
     
     void runBackgroundProcess(String textBundle, ProcessIface action){
