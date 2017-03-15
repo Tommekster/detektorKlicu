@@ -31,14 +31,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
@@ -165,7 +161,6 @@ public class MainWindow extends JFrame{
             DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file),this);
             tabsPane.add(detectionPane);
             tabsPane.setSelectedComponent(detectionPane);
-                    
         } catch (ExceptionMessage ex) {
             ex.displayMessage(this/*.workerDialog*/);
         }

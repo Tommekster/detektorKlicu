@@ -130,7 +130,7 @@ public class LabelImage extends BufferedImage{
     
     public void separateBackground(){
         progress.setName("separateBackground");
-        ImageProcessing.floodFillSeparateBackground(this);
+        ImageProcessing.floodFillSeparateBackground(this,progress);
         separatedBackground = true;
         regions = null;
     }
@@ -140,7 +140,7 @@ public class LabelImage extends BufferedImage{
         if(backgroundImage != null) return backgroundImage;
         progress.setName("backgroundImage");
         AtomicInteger col = new AtomicInteger(0);
-        backgroundImage = getCopyBufferedImage();
+        BufferedImage backgroundImage = getCopyBufferedImage();
         int colorRGB = color.getRGB();
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
             for(int y=0; y<getHeight(); y++){
@@ -149,6 +149,7 @@ public class LabelImage extends BufferedImage{
             }
             progress.setValue(col.addAndGet(1)*1000/getWidth());
         });
+        this.backgroundImage = backgroundImage;
         
         return backgroundImage;
     }

@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** ImageProcessing
  * class containing image processing functions
@@ -44,14 +45,17 @@ import java.util.Queue;
 public class ImageProcessing {
     static int d;
     
-    
+    public static void floodFillSeparateBackground(LabelImage image){
+        floodFillSeparateBackground(image, null);
+    }
     /** Flood-fill background 
      * fills background with the given color. It uses parallelization.
      * @param image image to fill
+     * @param progress
      * @param color the color of the flood
      * @return 
      */
-    public static void floodFillSeparateBackground(LabelImage image){
+    static void floodFillSeparateBackground(LabelImage image, QueuedWorker.Progress progress){
         int h = image.getHeight();
         int w = image.getWidth();
         
@@ -66,7 +70,14 @@ public class ImageProcessing {
         startPoints.add(new Point(w-1,h/2));
         startPoints.add(new Point(w/2,h-1));
         
-        startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y));
+        if(progress == null) startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y));
+        else {
+            int pointSum = h * w;
+            AtomicInteger points = new AtomicInteger(0);
+            startPoints.stream().parallel().forEach(p->{
+                progress.setValue((int) ((double)points.addAndGet(floodFill(image, p.x, p.y))/pointSum*1000));
+            });
+        }
     }
     
     /** test barvy
@@ -130,7 +141,7 @@ public class ImageProcessing {
      * @param color the color of the flood
      * @return 
      */
-    public static void floodFill(LabelImage image, int xi, int yi){
+    public static int floodFill(LabelImage image, int xi, int yi){
         //Deque<Point> stack = new ArrayDeque<>();
         Queue<Point> queue = new ArrayDeque<>();
         queue.clear();
@@ -140,6 +151,7 @@ public class ImageProcessing {
         int oRGB;
         int w = image.getWidth();
         int h = image.getHeight();
+        int denoted = 0;
         
         queue.add(new Point(x, y));
         
@@ -153,12 +165,15 @@ public class ImageProcessing {
             oRGB = image.getRGB(x,y);
             
             //image.setRGB(x, y, nRGB);
-            image.setLabel(x, y, 0);
+            image.setLabel(x, y, 0); 
+            denoted++;
             if(  y>0   && image.getLabel(x, y-1) != 0 && colorTest(image.getRGB(x, y-1), oRGB)) queue.add(new Point(x, y-1));
             if(x<(w-1) && image.getLabel(x+1, y) != 0 && colorTest(image.getRGB(x+1, y), oRGB)) queue.add(new Point(x+1, y));
             if(y<(h-1) && image.getLabel(x, y+1) != 0 && colorTest(image.getRGB(x, y+1), oRGB)) queue.add(new Point(x, y+1));
             if(  x>0   && image.getLabel(x-1, y) != 0 && colorTest(image.getRGB(x-1, y), oRGB)) queue.add(new Point(x-1, y));
         }
+        
+        return denoted;
     }
     
     public static BufferedImage gray2RGB(BufferedImage grayI){
