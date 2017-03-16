@@ -110,8 +110,8 @@ class Canvas extends JPanel{
                     (dimensions.height - imageRectangle.height)/2);
             AffineTransform xform = new AffineTransform();
             double scale = (double)imageRectangle.width/image.getWidth();
-            xform.setToScale(scale, scale);
-            xform.translate(imageRectangle.x, imageRectangle.y);
+            xform.setToTranslation(imageRectangle.x, imageRectangle.y);
+            xform.scale(scale, scale);
             
             //g.drawImage(image, imageRectangle.x, imageRectangle.y, 
             //        imageRectangle.width, imageRectangle.height, this);

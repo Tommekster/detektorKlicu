@@ -319,6 +319,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         worker.runInBackground(()->{
             hideRegions();
             showOriginal();
+            showRegionsTable(false);
             detection.resetDetection();
         });
     }

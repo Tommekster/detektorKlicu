@@ -169,7 +169,11 @@ public class MainWindow extends JFrame{
                         JOptionPane.INFORMATION_MESSAGE, icons.Icons.getIcon("help.png"));
         }catch(MissingResourceException ex){
             JOptionPane.showMessageDialog(this, 
-                        "Key detecor\nTomáš Zikmund\nvisit: http://kmlinux.fjfi.cvut.cz/~zikmuto2", // message
+                        new JLabel("<html><h1>Key detector</h1>"
+                                + "<table border=0><tr><td>created by: </td><td>Tomáš Zikmund</td></tr>"
+                                + "<tr><td>visit: </td>"
+                                + "<td><a href=\"http://kmlinux.fjfi.cvut.cz/~zikmuto2\">"
+                                + "http://kmlinux.fjfi.cvut.cz/~zikmuto2</a></td></tr></table></html>"), // message
                         "About", // title
                         JOptionPane.INFORMATION_MESSAGE, icons.Icons.getIcon("help.png"));
         }
