@@ -395,7 +395,8 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         @Override
         public void mouseClicked(MouseEvent e){
             if(e.getClickCount() > 1){
-                System.out.println(e.getX()+" "+e.getY());
+                Point p = canvas.getOriginalImageCoords(e.getPoint());
+                System.out.println(e.getX()+" "+e.getY()+", in image: "+((p==null)?"null":(p.x+","+p.y)));
             }
         }
     }

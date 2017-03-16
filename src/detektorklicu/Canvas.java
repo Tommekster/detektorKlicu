@@ -28,13 +28,13 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,8 +95,15 @@ class Canvas extends JPanel{
         return shapes != null && !shapes.isEmpty();
     }
     
-    public Rectangle getImageRectangle(){
-        return imageRectangle;
+    public Point getOriginalImageCoords(Point point){
+        if(imageRectangle.x < point.x && point.x < (imageRectangle.x + imageRectangle.width) 
+                && imageRectangle.y < point.y && point.y < (imageRectangle.y + imageRectangle.height)){
+            double scale = (double)imageRectangle.width/image.getWidth();
+            double x = (point.x - imageRectangle.x) / scale;
+            double y = (point.y - imageRectangle.y) / scale;
+            return new Point((int)x,(int)y);
+        }
+        return null;
     }
 
     @Override
@@ -104,10 +111,7 @@ class Canvas extends JPanel{
         super.paintComponent(gr);
         if(image != null){
             Graphics2D g = (Graphics2D) gr;
-            Dimension dimensions = this.getSize();
-            imageRectangle.setSize(getScalledDimensions());
-            imageRectangle.setLocation((dimensions.width - imageRectangle.width)/2, 
-                    (dimensions.height - imageRectangle.height)/2);
+            scaleImageRectangle();
             AffineTransform xform = new AffineTransform();
             double scale = (double)imageRectangle.width/image.getWidth();
             xform.setToTranslation(imageRectangle.x, imageRectangle.y);
@@ -137,7 +141,7 @@ class Canvas extends JPanel{
         }
     }
 
-    private Dimension getScalledDimensions() {
+    private void scaleImageRectangle() {
         Dimension d = this.getSize();
         float rs = (float)d.width/d.height;
         int w = image.getWidth();
@@ -150,19 +154,6 @@ class Canvas extends JPanel{
             h = h*d.width/w;
             w = d.width;
         }
-        Dimension scalled = new Dimension(w,h);
-        return scalled;
-    }
-    
-    private Polygon rescaleAndMovePolygon(Polygon polygon){
-        double scale = (double)imageRectangle.width/image.getWidth();
-        
-        Polygon scalledPolygon = new Polygon();
-        for(int i = 0; i < polygon.npoints; i++){
-            double x = imageRectangle.x+scale*polygon.xpoints[i];
-            double y = imageRectangle.y+scale*polygon.ypoints[i];
-            scalledPolygon.addPoint((int)x, (int)y);
-        }
-        return scalledPolygon;
+        imageRectangle.setBounds((d.width - w)/2, (d.height - h)/2, w, h);
     }
 }
