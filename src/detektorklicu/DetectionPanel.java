@@ -136,7 +136,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         );
         progressPanelLayout.setVerticalGroup(
             progressPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(cancelBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+            .addComponent(cancelBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 25, Short.MAX_VALUE)
             .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
@@ -182,16 +182,15 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         int option;
         try{
             option = JOptionPane.showConfirmDialog(parent, 
-                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlgMsg"), // message
+                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlgMsg").replace("{{filename}}", getName()), // message
                         ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlg"), // title
                         JOptionPane.YES_NO_CANCEL_OPTION);
         }catch(MissingResourceException ex){
             option = JOptionPane.showConfirmDialog(parent, 
-                        "Do you want to save the detecion?", // message
+                        "Do you want to save the \"{{fileName}}\" detecion?".replace("{{filename}}", getName()), // message
                         "Save", // title
                         JOptionPane.YES_NO_CANCEL_OPTION);
         }
-        System.out.println(option);
         return option == 1; /* 0 = Yes, 1 = No, 2 = Cancel, -1 = close */
     }
     

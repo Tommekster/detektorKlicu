@@ -50,12 +50,13 @@ public class ExceptionMessage extends Exception{
             JOptionPane.showMessageDialog(parent, 
                         ResourceBundle.getBundle("texts/Errors").getString(textBundle+"Msg"), // message
                         ResourceBundle.getBundle("texts/Errors").getString(textBundle), // title
-                        JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.ERROR_MESSAGE, icons.Icons.getIcon("error.png"));
         }catch(MissingResourceException ex){
             JOptionPane.showMessageDialog(parent, 
                         textBundle, // message
                         "Error", // title
-                        JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.ERROR_MESSAGE, 
+                        icons.Icons.getIcon("error.png"));
         }
     }
 }

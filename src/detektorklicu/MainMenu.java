@@ -98,11 +98,11 @@ class MainMenu{
 
         addMenu(fileMenu);
         //addMenuItem(fileNew, (e) -> window.fileNew(e));
-        addMenuItem(fileOpen, e->window.fileOpen(e));
-        addMenuItem(fileSave, e->window.fileSave(e));
-        addMenuItem(exportMenu, null);
+        addMenuItem("fileOpen16.png",fileOpen, e->window.fileOpen(e));
+        addMenuItem("fileSave16.png",fileSave, e->window.fileSave(e));
+        addMenuItem("fileExport16.png",exportMenu, null);
         addSeparator();
-        addMenuItem(fileQuit,e->window.fileQuit(e));
+        addMenuItem("exit16.png",fileQuit,e->window.fileQuit(e));
         
         selectMenu(exportMenu);
         addMenuItem(exportOriginal, e->window.fileExportOriginal(e));
@@ -117,42 +117,29 @@ class MainMenu{
         addMenuItem(view33Size, e->window.viewSetZoomSize(e,33));
         addMenuItem(view50Size, e->window.viewSetZoomSize(e,50));
         addSeparator();
-        addMenuItem(view100Size, e->window.viewSetZoomSize(e,100));
+        addMenuItem("viewOriginal16.png", view100Size, e->window.viewSetZoomSize(e,100));
         addSeparator();
         addMenuItem(view200Size, e->window.viewSetZoomSize(e,200));
         addMenuItem(view300Size, e->window.viewSetZoomSize(e,300));
         addMenuItem(view400Size, e->window.viewSetZoomSize(e,400));
         addSeparator();
-        addMenuItem(viewScalled, e->window.viewScalled(e));
+        addMenuItem("viewScalled16.png", viewScalled, e->window.viewScalled(e));
         
         addMenu(toolsMenu);
-        addMenuItem(toolResetDetection, e->window.toolResetDetection(e));
+        addMenuItem("toolResetDetection16.png", toolResetDetection, e->window.toolResetDetection(e));
         addSeparator();
-        addMenuItem(toolShowOriginal, e->window.toolShowOriginal(e));
-        addMenuItem(toolShowBackground, e->window.toolShowBackground(e));
-        addMenuItem(toolShowLabels, e->window.toolShowLabels(e));
-        addMenuItem(toolShowRegionsBounds, e->window.toolShowRegionsBounds(e));
+        addMenuItem("toolShowOriginal16.png", toolShowOriginal, e->window.toolShowOriginal(e));
+        addMenuItem("toolShowBackground16.png", toolShowBackground, e->window.toolShowBackground(e));
+        addMenuItem("toolShowLabels16.png", toolShowLabels, e->window.toolShowLabels(e));
+        addMenuItem("toolShowRegionBounds16.png", toolShowRegionsBounds, e->window.toolShowRegionsBounds(e));
         addSeparator();
-        addMenuItem(toolRegionsList, e->window.toolRegionsList(e));
-        addMenuItem(toolRegionDetail, e->window.toolRegionDetail(e));
+        addMenuItem("toolRegionsList16.png", toolRegionsList, e->window.toolRegionsList(e));
+        //addMenuItem("toolRegionDetail16.png", toolRegionDetail, e->window.toolRegionDetail(e));
         
         
         addMenu(helpMenu);
-        addMenuItem(helpAbout, e->window.helpAbout(e));
+        addMenuItem("help16.png", helpAbout, e->window.helpAbout(e));
         
-    }
-
-    private void initializeListeners(){
-        /*fileOpen.addActionListener(MainWindow.this::openImage);
-        fileSave.addActionListener(MainWindow.this::saveImage);
-        detectionTest.addActionListener(MainWindow.this::detectionTest);
-        detectionRegions.addActionListener(MainWindow.this::detectRegions);
-        //detectionRegionLabel.addActionListener(HlavniOkno.this::detectionScanline);
-        //detectionComponents.addActionListener(HlavniOkno.this::detectionComponents);
-        toolShowLabels.addActionListener(MainWindow.this::toolShowLabels);
-        toolRegionsList.addActionListener(MainWindow.this::toolRegionsList);
-        toolShowRegionsBounds.addActionListener(MainWindow.this::toolShowRegionsBounds);
-        toolRegionDetail.addActionListener(MainWindow.this::toolRegionDetail);*/
     }
     
     private void selectMenu(JMenu menu){

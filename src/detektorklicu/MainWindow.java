@@ -23,30 +23,31 @@
  */
 package detektorklicu;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import javax.swing.Icon;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.DimensionUIResource;
 
 /** Hlavni okno
  * Hlavni okno programu Deterktor klicu
@@ -55,6 +56,7 @@ import javax.swing.plaf.DimensionUIResource;
 public class MainWindow extends JFrame{
     private static final Lokalizator l = Lokalizator.getLokalizator();
     private final MainMenu mainMenu = new MainMenu(this);
+    private final MainToolBar toolBar = new MainToolBar(this);
     private final JTabbedPane tabsPane = new JTabbedPane();
     
     //private Canvas canvas = null; //new Canvas();
@@ -160,7 +162,17 @@ public class MainWindow extends JFrame{
     }
     
     public void helpAbout(ActionEvent e){
-        // TODO
+        try{
+            JOptionPane.showMessageDialog(this, 
+                        ResourceBundle.getBundle("texts/MainWindow").getString("helpAboutMsg"), // message
+                        ResourceBundle.getBundle("texts/MainWindow").getString("helpAbout"), // title
+                        JOptionPane.INFORMATION_MESSAGE, icons.Icons.getIcon("help.png"));
+        }catch(MissingResourceException ex){
+            JOptionPane.showMessageDialog(this, 
+                        "Key detecor\nTomáš Zikmund\nvisit: http://kmlinux.fjfi.cvut.cz/~zikmuto2", // message
+                        "About", // title
+                        JOptionPane.INFORMATION_MESSAGE, icons.Icons.getIcon("help.png"));
+        }
     }
     
     private void newDetection(File file){
@@ -180,17 +192,14 @@ public class MainWindow extends JFrame{
         JPanel pnlTab = new JPanel(new GridBagLayout());
         pnlTab.setOpaque(false);
         JLabel lblTitle = new JLabel(component.getName());
-        Icon icon = icons.Icons.getIcon("emblem-unreadable.png");
-        JButton btnClose = new JButton(icon);
+        JButton btnClose = new JButton(icons.Icons.getIcon("closeBasic.png"));
         btnClose.setBorder(null);
         btnClose.setMinimumSize(new Dimension(8, 8));
         btnClose.setMaximumSize(new Dimension(32, 32));
+        btnClose.setRolloverIcon(icons.Icons.getIcon("closeHover.png"));
+        btnClose.setPressedIcon(icons.Icons.getIcon("closePressed.png"));
         btnClose.addActionListener(e->{
-            if(component instanceof ClosableTab){
-                if(!((ClosableTab) component).onClosing(MainWindow.this))
-                    return;
-            }
-            tabsPane.remove(component);
+            closeTab(component);
         });
         
         GridBagConstraints gbc = new GridBagConstraints();
@@ -207,6 +216,15 @@ public class MainWindow extends JFrame{
         tabsPane.setTabComponentAt(index, pnlTab);
     }
 
+    private boolean closeTab(Component component) {
+        if(component instanceof ClosableTab){
+            if(!((ClosableTab) component).onClosing(MainWindow.this))
+                return false;
+        }
+        tabsPane.remove(component);
+        return true;
+    }
+
     /** Inicializace okna 
      * nastavi rozmery, titulku a eventy oknu
      */
@@ -215,17 +233,14 @@ public class MainWindow extends JFrame{
         int width = 600;
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((screen.width - width)/2, (screen.height - height)/2, width, height);
-        setTitle(l.tr("mainWindowTitle"));
-        add(tabsPane);
-        checkPossibleActions();
         
-        tabsPane.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e){
-                tabsMouseEvent(e);
-            }
-        });
-        //tabsPane.addTab(l.tr("sourceImage"), canvas);
+        setTitle(l.tr("mainWindowTitle"));
+        setIconImage(icons.Icons.getIcon("key.png").getImage());
+        
+        setLayout(new BorderLayout());
+        add(toolBar.getJToolBar(),BorderLayout.NORTH);
+        add(tabsPane,BorderLayout.CENTER);
+        checkPossibleActions();
         tabsPane.addChangeListener(this::tabsChange);
         
         addWindowListener(new WindowAdapter() {
@@ -251,8 +266,7 @@ public class MainWindow extends JFrame{
     
     private void checkPossibleActions(){
         mainMenu.enableImageActions(activeIsDetectionPanel());
-        DetectionPanel detPane = getActiveDetectionPane();
-        mainMenu.enableRegionsActions((detPane == null)?false:detPane.isRegionsTableShown());
+        toolBar.enableImageActions(activeIsDetectionPanel());
     }
     
     /** raise the event if active tabs is changed */
@@ -262,6 +276,10 @@ public class MainWindow extends JFrame{
     }
     
     private void closeProgram(){
+        Component tabCmp;
+        while((tabCmp = tabsPane.getSelectedComponent()) != null){
+            if(!closeTab(tabCmp)) return;
+        }
         System.exit(0);
     }
     
