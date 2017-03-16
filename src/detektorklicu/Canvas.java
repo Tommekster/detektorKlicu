@@ -23,12 +23,20 @@
  */
 package detektorklicu;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JPanel;
 
@@ -38,9 +46,17 @@ import javax.swing.JPanel;
  */
 class Canvas extends JPanel{
     protected BufferedImage image = null;
-    protected List<Polygon> polygons;
-    protected Color polygonsColor;
-    public void setImage(BufferedImage i){image=i;}
+    protected List<Shape> shapes = new LinkedList<>();
+    protected HashMap<Shape, Color> shapesColor = new HashMap<>();
+    protected HashMap<Shape, Stroke> shapesStroke = new HashMap<>();
+    protected Color defaultColor = Color.BLUE;
+    protected Stroke defaultStroke = new BasicStroke(1);
+    private Rectangle imageRectangle;
+    
+    public void setImage(BufferedImage i){
+        image=i;
+        imageRectangle = new Rectangle(0, 0, i.getWidth(), i.getHeight());
+    }
     public BufferedImage getImage() {return image;}
     public boolean isImageInside(){return image != null;}
 
@@ -53,55 +69,65 @@ class Canvas extends JPanel{
         setImage(image);
     }
     
-    public void displayRegions(){
-        displayRegions(Color.blue);
+    public void setDefaultColor(Color c){
+        defaultColor = c;
     }
     
-    public void displayRegions(Color c){
-        polygonsColor = c;
-        if(!(image instanceof LabelImage)) return;
-        displayRegions(((LabelImage)image).getRegionsPolygons());
-    }
-    
-    public void displayRegions(List<Polygon> polygons, Color c){
-        polygonsColor = c;
-        displayRegions(polygons);
-    }
-    
-    public void displayRegions(Polygon polygon, Color c){
-        List<Polygon> polygons = new ArrayList<>();
-        polygons.add(polygon);
-        polygonsColor = c;
-        displayRegions(polygons);
+    public void displayRegions(Polygon polygon, Color color, Stroke stroke){
+        shapes.clear();
+        shapes.add(polygon);
+        if(color == null) shapesColor.remove(polygon); else shapesColor.put(polygon, color);
+        if(stroke == null) shapesStroke.remove(polygon); else shapesStroke.put(polygon, stroke);
     }
     
     public void displayRegions(List<Polygon> polygons){
-        this.polygons = polygons;
+        shapes.clear();
+        polygons.forEach(polygon->shapes.add(polygon));
     }
     
-    public void hideRegions(){
-        polygons = null;
+    public void hideShapes(){
+        shapes.clear();
+        shapesColor.clear();
+        shapesStroke.clear();
     }
     
     public boolean showingRegions(){
-        return polygons != null && !polygons.isEmpty();
+        return shapes != null && !shapes.isEmpty();
+    }
+    
+    public Rectangle getImageRectangle(){
+        return imageRectangle;
     }
 
     @Override
-    public void paintComponent(Graphics g){
-        super.paintComponent(g);
+    public void paintComponent(Graphics gr){
+        super.paintComponent(gr);
         if(image != null){
+            Graphics2D g = (Graphics2D) gr;
             Dimension dimensions = this.getSize();
-            Dimension scalled = getScalledDimensions();
+            imageRectangle.setSize(getScalledDimensions());
+            imageRectangle.setLocation((dimensions.width - imageRectangle.width)/2, 
+                    (dimensions.height - imageRectangle.height)/2);
+            AffineTransform xform = new AffineTransform();
+            double scale = (double)imageRectangle.width/image.getWidth();
+            xform.setToScale(scale, scale);
+            xform.translate(imageRectangle.x, imageRectangle.y);
             
-            int top = (dimensions.height - scalled.height)/2;
-            int left = (dimensions.width - scalled.width)/2;
-            
-            g.drawImage(image, left, top, scalled.width, scalled.height, this);
+            //g.drawImage(image, imageRectangle.x, imageRectangle.y, 
+            //        imageRectangle.width, imageRectangle.height, this);
+            g.drawImage(image, xform, this);
             if(showingRegions()) {
-                g.setColor(polygonsColor);
-                polygons.stream().forEach(pol->{
-                    g.drawPolygon(rescaleAndMovePolygon(pol, top, left));
+                shapes.stream().forEach(shape->{
+                    if(shapesColor != null && shapesColor.containsKey(shape)){
+                        g.setColor(shapesColor.get(shape));
+                    } else g.setColor(defaultColor);
+                    if(shapesStroke != null && shapesStroke.containsKey(shape)){
+                        g.setStroke(shapesStroke.get(shape));
+                    } else g.setStroke(defaultStroke);
+                    /*if(shape instanceof Polygon)
+                        g.drawPolygon(rescaleAndMovePolygon((Polygon)shape));
+                    else */
+                        g.draw(xform.createTransformedShape(shape));
                 });
             }
         }
@@ -128,16 +154,15 @@ class Canvas extends JPanel{
         return scalled;
     }
     
-    private Polygon rescaleAndMovePolygon(Polygon pol, int top, int left){
-        Dimension o = getScalledDimensions();
-        double frac = (double)o.width/image.getWidth();
+    private Polygon rescaleAndMovePolygon(Polygon polygon){
+        double scale = (double)imageRectangle.width/image.getWidth();
         
-        Polygon spol = new Polygon();
-        for(int i = 0; i < pol.npoints; i++){
-            double x = left+frac*pol.xpoints[i];
-            double y = top+frac*pol.ypoints[i];
-            spol.addPoint((int)x, (int)y);
+        Polygon scalledPolygon = new Polygon();
+        for(int i = 0; i < polygon.npoints; i++){
+            double x = imageRectangle.x+scale*polygon.xpoints[i];
+            double y = imageRectangle.y+scale*polygon.ypoints[i];
+            scalledPolygon.addPoint((int)x, (int)y);
         }
-        return spol;
+        return scalledPolygon;
     }
 }

@@ -80,7 +80,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
             public void valueChanged(ListSelectionEvent e) {
                 Region region = getSelectedRegion();
                 if(region == null) return;
-                canvas.displayRegions(region.getBoundingRectangle(),Color.green);
+                canvas.displayRegions(region.getBoundingRectangle(),Color.green,null);
                 canvas.repaint();
             }
         });
@@ -197,12 +197,12 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         int option;
         try{
             option = JOptionPane.showConfirmDialog(parent, 
-                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlgMsg").replace("{{filename}}", getName()), // message
+                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlgMsg").replace("{{fileName}}", getName()), // message
                         ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlg"), // title
                         JOptionPane.YES_NO_CANCEL_OPTION);
         }catch(MissingResourceException ex){
             option = JOptionPane.showConfirmDialog(parent, 
-                        "Do you want to save the \"{{fileName}}\" detecion?".replace("{{filename}}", getName()), // message
+                        "Do you want to save the \"{{fileName}}\" detecion?".replace("{{fileName}}", getName()), // message
                         "Save", // title
                         JOptionPane.YES_NO_CANCEL_OPTION);
         }
@@ -290,13 +290,13 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
     
     public void showRegions() {
         worker.runInBackground(()->{
-            canvas.displayRegions(detection.getImage().getRegionsPolygons(),Color.blue);
+            canvas.displayRegions(detection.getImage().getRegionsPolygons());
             canvas.repaint();
         });
     }
     
     public void hideRegions() {
-        canvas.hideRegions();
+        canvas.hideShapes();
         canvas.repaint();
     }
     
@@ -388,6 +388,13 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
                 if(newSize > 600) newSize = 600;
                 if(newSize < 10) newSize = 10;
                 setZoom(newSize);
+            }
+        }
+        
+        @Override
+        public void mouseClicked(MouseEvent e){
+            if(e.getClickCount() > 1){
+                System.out.println(e.getX()+" "+e.getY());
             }
         }
     }
