@@ -25,15 +25,24 @@ package detektorklicu;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.TableModel;
 
 /**
@@ -51,6 +60,12 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         this.detection = detection;
         this.canvas = new Canvas(detection.getOriginal());
         initComponents();
+        
+        CanvasMouseListener canvasMouseListener = new CanvasMouseListener();
+        this.canvas.addMouseWheelListener(canvasMouseListener);
+        this.canvas.addMouseListener(canvasMouseListener);
+        this.canvas.addMouseMotionListener(canvasMouseListener);
+        this.canvas.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         setName(detection.getFilename());
         imageScrollPane.setViewportView(canvas);
@@ -326,4 +341,54 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
     private Canvas canvas;
     private QueuedWorker worker = new QueuedWorker();
     private int zoomSize = -1;
+    
+    class CanvasMouseListener extends MouseInputAdapter{
+        Rectangle currentRect;
+        Point origin;
+        /*
+        @Override
+        public void mouseMoved(MouseEvent e){
+
+        }
+        @Override
+        public void mouseDragged(MouseEvent e){
+
+        }*/
+        public void mousePressed(MouseEvent e) {
+            origin = new Point(e.getPoint());
+            
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if(origin != null){
+                //JViewport viewPort = (JViewport) SwingUtilities.getAncestorOfClass(JViewport.class, canvas);
+                JViewport viewPort = imageScrollPane.getViewport();
+                if (viewPort != null) {
+                    int deltaX = origin.x - e.getX();
+                    int deltaY = origin.y - e.getY();
+
+                    Rectangle view = viewPort.getViewRect();
+                    view.x += deltaX;
+                    view.y += deltaY;
+
+                    canvas.scrollRectToVisible(view);
+                }
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+        }
+        
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e){
+            if(e.isControlDown()){ // zoom
+                int newSize = zoomSize + e.getWheelRotation()*5;
+                if(newSize > 600) newSize = 600;
+                if(newSize < 10) newSize = 10;
+                setZoom(newSize);
+            }
+        }
+    }
 }

@@ -229,7 +229,7 @@ public class MainWindow extends JFrame{
      * nastavi rozmery, titulku a eventy oknu
      */
     private void initialization() {
-        int height = 450;
+        int height = 600;
         int width = 600;
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((screen.width - width)/2, (screen.height - height)/2, width, height);
