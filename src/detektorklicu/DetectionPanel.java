@@ -24,8 +24,11 @@
 package detektorklicu;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
@@ -37,7 +40,7 @@ import javax.swing.table.TableModel;
  *
  * @author Acer
  */
-public class DetectionPanel extends javax.swing.JPanel {
+public class DetectionPanel extends javax.swing.JPanel implements MainWindow.ClosableTab{
 
     /**
      * Creates new form DetectionPanel
@@ -172,6 +175,24 @@ public class DetectionPanel extends javax.swing.JPanel {
         else if("progressValue".equals(e.getPropertyName())){
             progressBar.setValue((int)e.getNewValue());
         }
+    }
+    
+    @Override
+    public boolean onClosing(Component parent){
+        int option;
+        try{
+            option = JOptionPane.showConfirmDialog(parent, 
+                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlgMsg"), // message
+                        ResourceBundle.getBundle("texts/DetecionPanel").getString("saveDlg"), // title
+                        JOptionPane.YES_NO_CANCEL_OPTION);
+        }catch(MissingResourceException ex){
+            option = JOptionPane.showConfirmDialog(parent, 
+                        "Do you want to save the detecion?", // message
+                        "Save", // title
+                        JOptionPane.YES_NO_CANCEL_OPTION);
+        }
+        System.out.println(option);
+        return option == 1; /* 0 = Yes, 1 = No, 2 = Cancel, -1 = close */
     }
     
     public void showRegionsTable(boolean b) {

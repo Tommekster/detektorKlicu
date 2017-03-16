@@ -25,6 +25,8 @@ package detektorklicu;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -33,13 +35,18 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
+import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.DimensionUIResource;
 
 /** Hlavni okno
  * Hlavni okno programu Deterktor klicu
@@ -159,11 +166,45 @@ public class MainWindow extends JFrame{
     private void newDetection(File file){
         try {
             DetectionPanel detectionPane = new DetectionPanel(Detection.newFromFile(file),this);
-            tabsPane.add(detectionPane);
-            tabsPane.setSelectedComponent(detectionPane);
+            addPanel(detectionPane);
         } catch (ExceptionMessage ex) {
             ex.displayMessage(this/*.workerDialog*/);
         }
+    }
+
+    private void addPanel(Component component) {
+        tabsPane.add(component);
+        tabsPane.setSelectedComponent(component);
+        
+        int index = tabsPane.indexOfComponent(component);
+        JPanel pnlTab = new JPanel(new GridBagLayout());
+        pnlTab.setOpaque(false);
+        JLabel lblTitle = new JLabel(component.getName());
+        Icon icon = icons.Icons.getIcon("emblem-unreadable.png");
+        JButton btnClose = new JButton(icon);
+        btnClose.setBorder(null);
+        btnClose.setMinimumSize(new Dimension(8, 8));
+        btnClose.setMaximumSize(new Dimension(32, 32));
+        btnClose.addActionListener(e->{
+            if(component instanceof ClosableTab){
+                if(!((ClosableTab) component).onClosing(MainWindow.this))
+                    return;
+            }
+            tabsPane.remove(component);
+        });
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        
+        pnlTab.add(lblTitle, gbc);
+        
+        gbc.gridx++;
+        gbc.weightx = 0;
+        pnlTab.add(btnClose, gbc);
+        
+        tabsPane.setTabComponentAt(index, pnlTab);
     }
 
     /** Inicializace okna 
@@ -354,5 +395,9 @@ public class MainWindow extends JFrame{
     
     static abstract interface ProcessIface{
         public abstract void action() throws ExceptionMessage;
+    }
+    
+    interface ClosableTab {
+        public boolean onClosing(Component cmp);
     }
 }

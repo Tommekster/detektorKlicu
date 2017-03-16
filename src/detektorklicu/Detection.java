@@ -26,10 +26,6 @@ package detektorklicu;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import javax.xml.bind.DatatypeConverter;
 
 /**
  *
