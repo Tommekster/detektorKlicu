@@ -47,10 +47,11 @@ import javax.swing.JPanel;
 class Canvas extends JPanel{
     protected BufferedImage image = null;
     protected List<Shape> shapes = new LinkedList<>();
+    private Settings settings = Settings.getInstance();
     protected HashMap<Shape, Color> shapesColor = new HashMap<>();
     protected HashMap<Shape, Stroke> shapesStroke = new HashMap<>();
-    protected Color defaultColor = Color.BLUE;
-    protected Stroke defaultStroke = new BasicStroke(1);
+    protected Color defaultColor = settings.defaultShapeColor;
+    protected Stroke defaultStroke = settings.defaultShapeStroke;
     private Rectangle imageRectangle;
     
     public void setImage(BufferedImage i){

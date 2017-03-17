@@ -135,13 +135,13 @@ public class LabelImage extends BufferedImage{
         regions = null;
     }
     
-    public BufferedImage getBackgroundImage(Color color) {
+    public BufferedImage getBackgroundImage() {
         if(!separatedBackground) separateBackground();
         if(backgroundImage != null) return backgroundImage;
         progress.setName("backgroundImage");
         AtomicInteger col = new AtomicInteger(0);
         BufferedImage backgroundImage = getCopyBufferedImage();
-        int colorRGB = color.getRGB();
+        int colorRGB = settings.backgroundColor.getRGB();
         IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
             for(int y=0; y<getHeight(); y++){
                 if(getLabel(x, y) == 0)
@@ -156,7 +156,7 @@ public class LabelImage extends BufferedImage{
     
     public BufferedImage getLabelsImage(){
         if(labelsImage == null) 
-            labelsImage = getLabelsImage(LabelImage.getPallete());
+            labelsImage = getLabelsImage(settings.labelsColorPalette);
         return labelsImage;
     }
     
@@ -243,6 +243,7 @@ public class LabelImage extends BufferedImage{
         List<Integer> regionsLabels = getLabelsList();
         progress.setName("makeRegionsList");
         regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
+        //regions = new ArrayList<>(regionsLabels.size());
         //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
         boolean disable1pixel = true;
         
@@ -303,10 +304,11 @@ public class LabelImage extends BufferedImage{
     }
     
     protected final int [][] labels;
-    protected List<Region> regions = null;
+    protected List<Region> regions;
     protected boolean separatedBackground = false;
     protected boolean denotedRegions = false;
     protected BufferedImage backgroundImage;
     protected BufferedImage labelsImage;
+    private Settings settings = Settings.getInstance();
     protected QueuedWorker.Progress progress = new QueuedWorker.Progress();
 }

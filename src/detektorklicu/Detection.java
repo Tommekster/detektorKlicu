@@ -76,7 +76,7 @@ public class Detection {
     }
     
     public BufferedImage getBackgroundImage() {
-        return image.getBackgroundImage(Color.red);
+        return image.getBackgroundImage();
     }
     
     /*private class DatectionSave implements Serializable {

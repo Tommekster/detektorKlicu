@@ -87,7 +87,8 @@ class MainToolBar{
         }catch(MissingResourceException e){
             btn.setToolTipText(textBundle);
         }
-        btn.addActionListener(action);
+        if(action != null) btn.addActionListener(action);
+        btn.setBorder(null);
         toolBar.add(btn);
     }
     private void addButton(String iconName, JButton item, ActionListener action){
