@@ -355,6 +355,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         public void mouseDragged(MouseEvent e){
 
         }*/
+        @Override
         public void mousePressed(MouseEvent e) {
             origin = new Point(e.getPoint());
             
@@ -393,9 +394,18 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         }
         
         @Override
+        public void mouseMoved(MouseEvent e){
+            Point p = canvas.getOriginalImageCoords(e.getPoint());
+            if(p == null) canvas.setToolTipText("");
+            else canvas.setToolTipText(""+detection.getImage().getLabel(p.x, p.y));
+        }
+        
+        @Override
         public void mouseClicked(MouseEvent e){
             if(e.getClickCount() > 1){
                 Point p = canvas.getOriginalImageCoords(e.getPoint());
+                if(p == null) canvas.setToolTipText("");
+                else canvas.setToolTipText(""+detection.getImage().getLabel(p.x, p.y));
                 System.out.println(e.getX()+" "+e.getY()+", in image: "+((p==null)?"null":(p.x+","+p.y)));
             }
         }
