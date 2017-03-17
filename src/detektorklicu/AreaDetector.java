@@ -188,14 +188,15 @@ public class AreaDetector {
     }
     
     private void agglomerateRegions(){
-        IntStream.iterate(0, i->i+1).limit(image.getWidth()).parallel()
-                .forEach(x->{
-                    for(int y = 0; y < image.getHeight(); y++){
-                        TreeSet<Integer> comp = findComponent(image.getLabel(x,y));
-                        if(comp != null) 
-                            image.setLabel(x, y, findMin(comp));
-                    }
-                });
+        IntStream str = IntStream.iterate(0, i->i+1).limit(image.getWidth());
+        if(Settings.getInstance().parallel) str = str.parallel();
+        str.forEach(x->{
+            for(int y = 0; y < image.getHeight(); y++){
+                TreeSet<Integer> comp = findComponent(image.getLabel(x,y));
+                if(comp != null) 
+                    image.setLabel(x, y, findMin(comp));
+            }
+        });
     }
     
     private void setProgress(int i){

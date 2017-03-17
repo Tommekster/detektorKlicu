@@ -42,6 +42,7 @@ public class Settings {
     Color backgroundColor = Color.RED;
     Color selectedRegionColor = Color.GREEN;
     List<Color> labelsColorPalette = LabelImage.getPallete();
+    double minimalRegionSurfaceFraction = 0.001;
     
     private static Settings instance;
     private Settings(){

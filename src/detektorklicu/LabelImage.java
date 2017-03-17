@@ -34,7 +34,6 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,8 +50,9 @@ public class LabelImage extends BufferedImage{
     protected LabelImage(ColorModel cm, WritableRaster raster, boolean isRasterPremultiplied, Hashtable<?,?> properties) {
         super(cm,raster,isRasterPremultiplied,properties);
         labels = new int[getWidth()][getHeight()];
-        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel()
-                .forEach(x->{for(int y=0; y<getHeight();y++)setLabel(x, y, 1);});
+        IntStream str = IntStream.iterate(0, n->n+1).limit(getWidth());
+        if(settings.parallel) str = str.parallel();
+        str.forEach(x->{for(int y=0; y<getHeight();y++) setLabel(x, y, 1);});
     }
     
     private LabelImage(int width, int height, int type, IndexColorModel cm){
@@ -112,12 +112,13 @@ public class LabelImage extends BufferedImage{
         progress.setName("clearLabels");
         
         AtomicInteger col = new AtomicInteger(0);
-        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel()
-                .forEach(x->{
-                        for(int y=0; y<getHeight();y++)setLabel(x, y, 1);
-                        progress.setValue(col.addAndGet(1)*1000/getWidth());
-                    }
-                );
+        IntStream str = IntStream.iterate(0, n->n+1).limit(getWidth());
+        if(settings.parallel) str = str.parallel();
+        str.forEach(x->{
+                for(int y=0; y<getHeight();y++)setLabel(x, y, 1);
+                progress.setValue(col.addAndGet(1)*1000/getWidth());
+            }
+        );
         regions = null;
         separatedBackground = false;
         denotedRegions = false;
@@ -142,7 +143,9 @@ public class LabelImage extends BufferedImage{
         AtomicInteger col = new AtomicInteger(0);
         BufferedImage backgroundImage = getCopyBufferedImage();
         int colorRGB = settings.backgroundColor.getRGB();
-        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
+        IntStream str = IntStream.iterate(0, n->n+1).limit(getWidth());
+        if(settings.parallel) str = str.parallel();
+        str.forEach(x->{
             for(int y=0; y<getHeight(); y++){
                 if(getLabel(x, y) == 0)
                     backgroundImage.setRGB(x, y, colorRGB);
@@ -182,7 +185,9 @@ public class LabelImage extends BufferedImage{
         
         // draw labels into image
         AtomicInteger col = new AtomicInteger(0);
-        IntStream.iterate(0, n->n+1).limit(getWidth()).parallel().forEach(x->{
+        IntStream str = IntStream.iterate(0, n->n+1).limit(getWidth());
+        if(settings.parallel) str = str.parallel();
+        str.forEach(x->{
             for(int y=0; y<getHeight(); y++){
                 li.labels[x][y] = labels[x][y];
                 if(labels[x][y] == 0)
@@ -205,7 +210,9 @@ public class LabelImage extends BufferedImage{
                 .forEachOrdered(i->inRow.add(new ArrayList<>()));
         
         AtomicInteger col = new AtomicInteger(0);
-        IntStream.iterate(0, i->i+1).limit(getWidth()).parallel().forEach(x->{
+        IntStream str = IntStream.iterate(0, i->i+1).limit(getWidth());
+        if(settings.parallel) str = str.parallel();
+        str.forEach(x->{
             for(int y = 0; y < getHeight(); y++){
                 int ii = getLabel(x, y);
                 if(ii == 0) continue;
@@ -242,17 +249,21 @@ public class LabelImage extends BufferedImage{
         if(!denotedRegions) denoteRegions();
         List<Integer> regionsLabels = getLabelsList();
         progress.setName("makeRegionsList");
-        regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
-        //regions = new ArrayList<>(regionsLabels.size());
-        //for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
-        boolean disable1pixel = true;
+        //regions = Collections.synchronizedList(new ArrayList<>(regionsLabels.size()));
+        regions = new ArrayList<>(regionsLabels.size());
+        for(int i = 0; i < regionsLabels.size(); i++) regions.add(null);
         
         AtomicInteger lbl = new AtomicInteger(0);
-        regionsLabels.stream().parallel().forEach(label->{
+        ((settings.parallel)
+                ? regionsLabels.parallelStream()
+                : regionsLabels.stream())
+        .forEach(label->{
             PointExtremes extremes = null;
             int area = 0;
-            int xc = 0;
-            int yc = 0;
+            double xc = 0;
+            double yc = 0;
+            int minimalSurface = (settings.minimalRegionSurfaceFraction < 0)?0:
+                    ((int) (((double)getWidth())*((double)getHeight())*settings.minimalRegionSurfaceFraction));
                     
             for(int x = 0; x<getWidth(); x++){
                 for(int y = 0; y<getHeight(); y++){
@@ -266,13 +277,16 @@ public class LabelImage extends BufferedImage{
                     }
                 }
             }
-            Point2D center = new Point2D.Double((double)xc/area, (double)yc/area);
-            if(extremes != null && (area > 1 || !disable1pixel))
-                regions.add(new Region(this,label, area, extremes.getXmin(), 
+            Point2D center = new Point2D.Double(xc/area, yc/area);
+            if(extremes != null && (area > minimalSurface))
+                regions.set(regionsLabels.indexOf(label),
+                        new Region(this,label, area, extremes.getXmin(), 
                         extremes.getYmin(), extremes.getXmax(), 
                         extremes.getYmax(), center));
             progress.setValue(lbl.addAndGet(1)*1000/regionsLabels.size());
         });
+        // TODO: remove small regions from the image
+        while(regions.remove(null)); // remove empty positions in the list
     }
     
     public List<Region> getRegions() {
@@ -282,7 +296,10 @@ public class LabelImage extends BufferedImage{
     
     public void drawRegions() {
         List<Region> regions = getRegions();
-        regions.parallelStream().forEach(region->{
+        ((settings.parallel)
+                ? regions.parallelStream()
+                : regions.stream())
+        .forEach(region->{
             region.drawBoundingRectangle(Color.blue);
         });
     }

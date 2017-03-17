@@ -97,18 +97,18 @@ public class ImageComponent extends BufferedImage{
         if(first.y != last.y){
             surface.getAndAdd((first.y - last.y)*first.x);
         }
-        IntStream.iterate(1, n->n+1)
-                .limit(boundaryPath.size()-1)
-                .parallel()
-                .forEach(i->{
-                    Point prev = boundaryPath.get(i-1);
-                    Point curr = boundaryPath.get(i);
-                    
-                    if(prev.y == curr.y-1) /* down */ {
-                        surface.getAndAdd(curr.x);
-                    }else if(prev.y == curr.y+1) /* up */ {
-                        surface.getAndAdd(-curr.x);
-                    }
+        IntStream str = IntStream.iterate(1, n->n+1)
+                .limit(boundaryPath.size()-1);
+        if(Settings.getInstance().parallel) str = str.parallel();
+        str.forEach(i->{
+            Point prev = boundaryPath.get(i-1);
+            Point curr = boundaryPath.get(i);
+
+            if(prev.y == curr.y-1) /* down */ {
+                surface.getAndAdd(curr.x);
+            }else if(prev.y == curr.y+1) /* up */ {
+                surface.getAndAdd(-curr.x);
+            }
         });
         
         return surface.get();

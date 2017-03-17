@@ -77,7 +77,10 @@ public class Region {
         //Point center = region.getCenter();
         double xc = center.getX();
         double yc = center.getY();
-        this.getBoundings().getHorizontalIntStream().parallel().forEach(x->{
+        ((Settings.getInstance().parallel)
+                ? this.getBoundings().getHorizontalIntStream().parallel()
+                : this.getBoundings().getHorizontalIntStream())
+        .forEach(x->{
             double sumInCol = 0.0;
             double xPowered = Math.pow((double)x-xc, p);
             for(int y : this.getBoundings().getVerticalIntStream().toArray()) {

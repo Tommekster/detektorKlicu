@@ -70,11 +70,16 @@ public class ImageProcessing {
         startPoints.add(new Point(w-1,h/2));
         startPoints.add(new Point(w/2,h-1));
         
-        if(progress == null) startPoints.stream().parallel().forEach(p->floodFill(image, p.x, p.y));
+        if(progress == null) 
+            ((Settings.getInstance().parallel)?
+                    startPoints.parallelStream():startPoints.stream())
+                    .forEach(p->floodFill(image, p.x, p.y));
         else {
             int pointSum = h * w;
             AtomicInteger points = new AtomicInteger(0);
-            startPoints.stream().parallel().forEach(p->{
+            ((Settings.getInstance().parallel)?
+                    startPoints.parallelStream():startPoints.stream())
+                    .forEach(p->{
                 progress.setValue((int) ((double)points.addAndGet(floodFill(image, p.x, p.y))/pointSum*1000));
             });
         }
