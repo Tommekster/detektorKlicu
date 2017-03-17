@@ -34,6 +34,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -287,6 +288,12 @@ public class LabelImage extends BufferedImage{
         });
         // TODO: remove small regions from the image
         while(regions.remove(null)); // remove empty positions in the list
+        regions.sort(new Comparator<Region>() {
+            @Override
+            public int compare(Region o1, Region o2) {
+                return o1.getLabel() - o2.getLabel();
+            }
+        });
     }
     
     public List<Region> getRegions() {
