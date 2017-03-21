@@ -33,8 +33,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
+import java.io.File;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JViewport;
@@ -43,6 +45,8 @@ import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputAdapter;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableModel;
 
 /**
@@ -68,6 +72,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         this.canvas.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         setName(detection.getFilename());
+        System.out.println((new File(detection.getFilename())).getName());
         imageScrollPane.setViewportView(canvas);
         tableScrollPane.setVisible(false);
         progressPanel.setVisible(false);
@@ -322,6 +327,56 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
             showRegionsTable(false);
             detection.resetDetection();
         });
+    }
+    
+    
+    void exportCurrentImage() {
+        File file = saveDialog(new FileNameExtensionFilter("SVG Image", "svg"));
+        worker.runInBackground(()->{canvas.export(file);});
+    }
+
+    void exportRegionsList() {
+        File file = saveDialog(new FileNameExtensionFilter("Common separated values", "csv"));
+        worker.runInBackground(()->{detection.getImage().exportRegionsCSV(file);});
+    }
+
+    void exportOriginalImage() {
+        File file = saveDialog(new FileNameExtensionFilter("PNG Image", "png"));
+        worker.runInBackground(()->{detection.getImage().exportImage(file);});
+    }
+    
+    private File saveDialog(FileFilter... fileFilters){
+        FileFilter fileFilter;
+        fileFilter = (fileFilters.length > 0) ? fileFilters[0]
+            : new FileNameExtensionFilter("PNG Image", "png");
+        int lastDotPos = detection.getFilename().lastIndexOf(".");
+        String originalName = (lastDotPos > 0)
+                ? detection.getFilename().substring(0, lastDotPos)
+                : detection.getFilename();
+        final JFileChooser jfc = new JFileChooser();
+        
+        jfc.setCurrentDirectory(new File("."));
+        jfc.setDialogTitle("Save file");
+        jfc.setDialogType(JFileChooser.SAVE_DIALOG);
+        jfc.setSelectedFile(
+                new File(originalName
+                        +((fileFilter instanceof FileNameExtensionFilter)
+                        ? "."+((FileNameExtensionFilter) fileFilter).getExtensions()[0]
+                        : ".png")));
+        jfc.setFileFilter(fileFilter);
+        for(FileFilter filter : fileFilters)
+            jfc.addChoosableFileFilter(filter);
+        // jfc.addPropertyChangeListener(...);
+        if(jfc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
+            //String format = "PNG";
+            //format = jfc.getFileFilter().
+            //if(jfc.getFileFilter().equals(filtrBMP)) format = "BMP";
+            File choosedFile = new File(jfc.getCurrentDirectory()
+                        .getAbsolutePath(), jfc.getSelectedFile().getName());
+            //ImageIO.write(getImage(), format, vybranySoubor);
+            return choosedFile;
+        }
+        return null;
     }
     
     private JTable getRegionsTable() {

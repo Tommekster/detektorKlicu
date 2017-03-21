@@ -32,13 +32,17 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 
@@ -325,6 +329,34 @@ public class LabelImage extends BufferedImage{
     
     public void setWorker(QueuedWorker worker){
         progress.setWorker(worker);
+    }
+    
+    void exportRegionsCSV(File file) throws ExceptionMessage {
+        RegionsTableModel model = getRegionsTableModel();
+        progress.setName("exportRegionsList");
+        int rows = model.getRowCount();
+        int cols = model.getColumnCount();
+        try (Writer writer = new FileWriter(file)){
+            for(int i = 0; i < rows; i++){
+                for(int j = 0; j < cols; j++){
+                    writer.write("\""+model.getValueAt(i, j).toString()+"\", ");
+                }
+                writer.write("\n");
+                progress.setValue(1000*i/rows);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(LabelImage.class.getName()).log(Level.SEVERE, null, ex);
+            throw new ExceptionMessage("expotRegionsCSV", ex);
+        } 
+    }
+
+    void exportImage(File file) throws ExceptionMessage {
+        progress.setName("exportOriginalImage");
+        try{
+            ImageIO.write(this, "PNG", file);
+        }catch(IOException e){
+            throw new ExceptionMessage("exportOriginalImage", e);
+        }
     }
     
     protected final int [][] labels;

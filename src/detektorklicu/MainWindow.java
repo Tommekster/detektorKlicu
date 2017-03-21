@@ -89,17 +89,20 @@ public class MainWindow extends JFrame{
     
     /** exports source image */
     public void fileExportOriginal(ActionEvent e){
-        // TODO
+        if(!activeIsDetectionPanel()) return;
+        getActiveDetectionPane().exportOriginalImage();
     }
     
     /** exports labels */
     public void fileExportLabels(ActionEvent e){
-        // TODO
+        if(!activeIsDetectionPanel()) return;
+        getActiveDetectionPane().exportCurrentImage();
     }
     
     /** exports regions list */
     public void fileExportRegionsList(ActionEvent e){
-        // TODO
+        if(!activeIsDetectionPanel()) return;
+        getActiveDetectionPane().exportRegionsList();
     }
     
     /** exports regions list */

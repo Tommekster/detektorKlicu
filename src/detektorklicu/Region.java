@@ -42,6 +42,7 @@ public class Region {
     private double orientation = 0;
     private double [] halfAxes = {0,0};
     //private double sinTheta = 0, cosTheta = 0;
+    private Polygon boundingRectangle;
     private final LabelImage parent;
     
     public Region(LabelImage parent, int label, int area, int left, int top, int right, int bottom, Point2D center){
@@ -108,6 +109,8 @@ public class Region {
         orientation = Math.atan(2*u11/(u20-u02))/2 + (((u20-u02)<0)?Math.PI/2:0);
         halfAxes[0] = Math.sqrt(2*(C+D_root)/area);
         halfAxes[1] = Math.sqrt(2*(C-D_root)/area);
+        
+        boundingRectangle = null;
     }
     
     public void drawBoundingRectangle(Color color){
@@ -119,6 +122,7 @@ public class Region {
 
     public Polygon getBoundingRectangle() {
         if(!hasEllipse()) findBoundingEllipse();
+        if(boundingRectangle != null) return boundingRectangle;
         double a = halfAxes[0];
         double b = halfAxes[1];
         double cosTheta = Math.cos(orientation);
@@ -138,6 +142,12 @@ public class Region {
         Polygon pol = new Polygon();
         for(int i = 0; i < 4; i++) pol.addPoint((int)p[i].getX(),(int)p[i].getY());
         pol.addPoint((int)p[0].getX(),(int)p[0].getY());
+        
+        boundingRectangle = pol;
         return pol;
+    }
+    
+    class Shapes {
+        
     }
 }

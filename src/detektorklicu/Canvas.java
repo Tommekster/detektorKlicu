@@ -23,7 +23,6 @@
  */
 package detektorklicu;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -35,6 +34,7 @@ import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -156,5 +156,9 @@ class Canvas extends JPanel{
             w = d.width;
         }
         imageRectangle.setBounds((d.width - w)/2, (d.height - h)/2, w, h);
+    }
+    
+    public void export(File file){
+        //org.jfree.graphics2d.svg.SVGGraphics2D graph
     }
 }
