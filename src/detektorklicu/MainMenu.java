@@ -51,7 +51,7 @@ class MainMenu{
     
     private final JMenu exportMenu = new JMenu();
     private final JMenuItem exportOriginal = new JMenuItem();
-    private final JMenuItem exportLabels = new JMenuItem();
+    private final JMenuItem exportCurrent = new JMenuItem();
     private final JMenuItem exportRegions = new JMenuItem();
 
     /*private final JMenu detectionMenu = new JMenu();
@@ -106,7 +106,7 @@ class MainMenu{
         
         selectMenu(exportMenu);
         addMenuItem(exportOriginal, e->window.fileExportOriginal(e));
-        addMenuItem(exportLabels, e->window.fileExportLabels(e));
+        addMenuItem(exportCurrent, e->window.fileExportCurrent(e));
         addMenuItem(exportRegions, e->window.fileExportRegionsList(e));
         
         //addMenu(detectionMenu);

@@ -94,7 +94,7 @@ public class MainWindow extends JFrame{
     }
     
     /** exports labels */
-    public void fileExportLabels(ActionEvent e){
+    public void fileExportCurrent(ActionEvent e){
         if(!activeIsDetectionPanel()) return;
         getActiveDetectionPane().exportCurrentImage();
     }

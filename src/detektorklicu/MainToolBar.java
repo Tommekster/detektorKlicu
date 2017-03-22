@@ -44,6 +44,7 @@ class MainToolBar{
     private final JToolBar toolBar = new JToolBar();
     private final JButton fileOpen = new JButton();
     private final JButton fileSave = new JButton();
+    private final JButton fileExport = new JButton();
     private final JButton viewOriginal = new JButton();
     private final JButton viewScalled = new JButton();
     private final JButton showOriginal = new JButton();
@@ -67,6 +68,7 @@ class MainToolBar{
 
         addButton("fileOpen.png", fileOpen, window::fileOpen);
         addButton("fileSave.png", fileSave, window::fileSave);
+        addButton("fileExport.png", fileExport, window::fileExportCurrent);
         addSeparator();
         addButton("viewOriginal.png", viewOriginal, (e) -> window.viewSetZoomSize(e, 100));
         addButton("viewScalled.png", viewScalled, window::viewScalled);
@@ -113,6 +115,7 @@ class MainToolBar{
     
     public void enableImageActions(boolean b){
         fileSave.setEnabled(b);
+        fileExport.setEnabled(b);
         
         viewOriginal.setEnabled(b);
         viewScalled.setEnabled(b);
