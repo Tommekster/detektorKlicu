@@ -23,6 +23,7 @@
  */
 package detektorklicu;
 
+import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 /** Hlavní třída programu Detektor klíčů
@@ -47,11 +48,17 @@ public class DetektorKlicu {
                     break;
                 }
             }
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(DetektorKlicu.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
+        try{
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+        }catch(Exception e){
+            
+        }
         
         MainWindow okno = new MainWindow();
         okno.setVisible(true);
