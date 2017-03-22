@@ -35,19 +35,11 @@ import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import org.jfree.graphics2d.svg.MeetOrSlice;
-import org.jfree.graphics2d.svg.PreserveAspectRatio;
-import org.jfree.graphics2d.svg.SVGGraphics2D;
-import org.jfree.graphics2d.svg.SVGUnits;
-import org.jfree.graphics2d.svg.SVGUtils;
-import org.jfree.graphics2d.svg.ViewBox;
 
 /** Canvas panel
  * nested class that cares about appropriate image painting
@@ -168,13 +160,9 @@ class Canvas extends JPanel{
     }
     
     public void export(File file) throws ExceptionMessage {
-        SVGGraphics2D g2svg = new SVGGraphics2D(getWidth(),getHeight());
+        ExportSVG export = new ExportSVG();
+        Graphics2D g2svg = export.getGraphics(getWidth(), getHeight());
         paintComponent(g2svg);
-        try {
-            SVGUtils.writeToSVG(file, g2svg.getSVGElement(file.getName(), true, new ViewBox(0, 0, getWidth(), getHeight()), PreserveAspectRatio.XMID_YMID, MeetOrSlice.MEET));
-        } catch (IOException ex) {
-            Logger.getLogger(Canvas.class.getName()).log(Level.SEVERE, null, ex);
-            throw new ExceptionMessage("expotSVG", ex);
-        }
+        export.save(file);
     }
 }
