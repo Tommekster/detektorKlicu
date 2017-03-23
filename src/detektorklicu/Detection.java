@@ -23,6 +23,8 @@
  */
 package detektorklicu;
 
+import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -47,6 +49,7 @@ import java.util.logging.Logger;
 public class Detection {
     private String originalFilename;
     private File saveFile;
+    private boolean saved;
     private LabelImage image;
     private PropertyChangeSupport changes = new PropertyChangeSupport(this);
     private int progress;
@@ -64,6 +67,7 @@ public class Detection {
         Detection d = new Detection();
         d.originalFilename = file.getName();
         d.image = LabelImage.fromFile(file);
+        d.saved = false;
         return d;
     }
     public static Detection newFromXML(File file) throws ExceptionMessage {
@@ -73,7 +77,25 @@ public class Detection {
             Save saved=(Save)decoder.readObject();
             d.originalFilename = saved.originalFilename;
             d.image = LabelImage.fromBase64(saved.originalImage);
+            d.saved = true;
+            if(saved.regions.isEmpty()) return d;
             
+            for(int x = 0; x < d.image.getWidth(); x++)
+                for(int y = 0; y < d.image.getHeight(); y++)
+                    d.image.setLabel(x, y, 0);
+            for(Region r : saved.regions){
+                detektorklicu.Region region = new detektorklicu.Region(d.image, r.labelId, r.surfaceArea, r.boundings, r.center);
+                for(String label : r.shape.split(";\\ ")){
+                    String [] nums = label.split(",");
+                    int x = Integer.parseInt(nums[0]);
+                    int y = Integer.parseInt(nums[1]);
+                    int len = Integer.parseInt(nums[2]);
+                    for(int k = r.boundings.y+y; k < r.boundings.y+y+len-1; k++)
+                        d.image.setLabel(r.boundings.x+x, k, r.labelId);
+                    System.out.println("["+x+","+y+","+len+"]");
+                }
+                d.image.insertRegion(region);
+            }
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Detection.class.getName()).log(Level.SEVERE, null, ex);
             throw new ExceptionMessage("openDetection", ex);
@@ -83,6 +105,10 @@ public class Detection {
         
     public String getFilename(){
         return originalFilename;
+    }
+    
+    public boolean isSaved(){
+        return saved;
     }
     
     public BufferedImage getOriginal() {
@@ -148,47 +174,27 @@ public class Detection {
             throw new ExceptionMessage("saveDetection", ex);
         }
         
-        /*s.labels = new ArrayList<>();
-        for(int y = 0; y < getImage().getHeight(); y++){
-            int lastLabel = 0;
-            int len = 0;
-            for(int x = 0; x < getImage().getWidth(); x++){
-                int curLabel = getImage().getLabel(x, y);
-                if(curLabel == lastLabel) len++;
-                else {
-                    if(lastLabel != 0) {
-                        Label l = new Label();
-                        l.labelId = lastLabel;
-                        l.x = x;
-                        l.y = y;
-                        l.length = len;
-                        s.labels.add(l);
-                    }
-                    if(curLabel != 0)
-                        len = 1;
-                    lastLabel = curLabel;
-                }
-            }
-        }*/
-        
         if(getImage().hasRegions()){
             s.regions = new ArrayList<>();
             for(detektorklicu.Region region : getImage().getRegions()){
                 Region r = new Region();
                 r.labelId = region.getLabel();
                 r.surfaceArea = region.getArea();
-                r.left = region.getBoundings().leftTop.x;
-                r.top = region.getBoundings().leftTop.y;
-                r.right = region.getBoundings().rightBottom.x;
-                r.bottom = region.getBoundings().rightBottom.y;
+                r.center = region.getCenter();
                 
-                int width = r.right - r.left + 1;
-                int height = r.bottom - r.top + 1;
+                int left = region.getBoundings().leftTop.x;
+                int top = region.getBoundings().leftTop.y;
+                int right = region.getBoundings().rightBottom.x;
+                int bottom = region.getBoundings().rightBottom.y;
+                int width = right - left + 1;
+                int height = bottom - top + 1;
+                r.boundings = new Rectangle(left, top, width, height);
+                
                 StringBuilder sb = new StringBuilder("");
                 for(int y = 0; y < height; y++) {
                     int len = 0;
                     for(int x = width-1; x >= 0; x--) {
-                        int lbl = getImage().getLabel(r.left+x, r.top+y);
+                        int lbl = getImage().getLabel(left+x, top+y);
                         if(lbl == r.labelId){
                             len++;
                         }
@@ -197,10 +203,8 @@ public class Detection {
                                 .append((lbl != r.labelId)?(x+1):x).append(",")
                                 .append(y).append(",")
                                 .append(len).append("; ");
-                            System.out.println("["+x+","+y+","+len+"]");
                             len = 0;
                         }
-                        System.out.println("lbl:"+lbl+",x:"+x+",y:"+y+",len:"+len+",X:"+(r.left+x)+",Y:"+(r.top+y));
                     }
                 }
                 r.shape = sb.toString();
@@ -231,10 +235,8 @@ public class Detection {
     public static class Region{
         public int labelId;
         public int surfaceArea;
-        public int left; 
-        public int top; 
-        public int right; 
-        public int bottom;
+        public Rectangle boundings;
+        public Point2D center;
         public String shape;
         public boolean hasEllipseInfo;
         public double halfAxisA;

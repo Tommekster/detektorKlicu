@@ -26,6 +26,7 @@ package detektorklicu;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.util.concurrent.atomic.DoubleAdder;
 
@@ -44,6 +45,10 @@ public class Region {
     //private double sinTheta = 0, cosTheta = 0;
     private Polygon boundingRectangle;
     private final LabelImage parent;
+    
+    public Region(LabelImage parent, int label, int area, Rectangle boundings, Point2D center){
+        this(parent, label, area, boundings.x, boundings.y, boundings.x+boundings.width, boundings.y+boundings.height, center);
+    }
     
     public Region(LabelImage parent, int label, int area, int left, int top, int right, int bottom, Point2D center){
         this.parent = parent;

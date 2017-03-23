@@ -196,6 +196,8 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
     
     @Override
     public boolean onClosing(Component parent){
+        if(detection.isSaved()) return true;
+        
         int option;
         try{
             option = JOptionPane.showConfirmDialog(parent, 

@@ -320,6 +320,14 @@ public class LabelImage extends BufferedImage{
         return regions;
     }
     
+    void insertRegion(Region region) {
+        if(region == null) return;
+        separatedBackground = true;
+        denotedRegions = true;
+        if(regions == null) regions = new ArrayList<>();
+        regions.add(region);
+    }
+    
     public void drawRegions() {
         List<Region> regions = getRegions();
         ((settings.parallel)
@@ -388,4 +396,5 @@ public class LabelImage extends BufferedImage{
     protected BufferedImage labelsImage;
     private Settings settings = Settings.getInstance();
     protected QueuedWorker.Progress progress = new QueuedWorker.Progress();
+
 }
