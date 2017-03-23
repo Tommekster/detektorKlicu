@@ -30,19 +30,15 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -74,7 +70,6 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         this.canvas.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         setName(detection.getFilename());
-        System.out.println((new File(detection.getFilename())).getName());
         imageScrollPane.setViewportView(canvas);
         tableScrollPane.setVisible(false);
         progressPanel.setVisible(false);
@@ -213,6 +208,9 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
                         "Save", // title
                         JOptionPane.YES_NO_CANCEL_OPTION);
         }
+        if(option == JOptionPane.YES_OPTION){
+            saveDetection();
+        }
         return option == 1; /* 0 = Yes, 1 = No, 2 = Cancel, -1 = close */
     }
     
@@ -331,6 +329,10 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         });
     }
     
+    void saveDetection() {
+        File file = (detection.hasFile())?detection.getFile():saveDialog(new FileNameExtensionFilter("XML file", "xml"));
+        worker.runInBackground(()->{detection.save(file);});
+    }
     
     void exportCurrentImage() {
         File file = saveDialog(new FileNameExtensionFilter("SVG Image", "svg"));

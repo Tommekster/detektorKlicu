@@ -83,8 +83,8 @@ public class MainWindow extends JFrame{
     
     /** saves detection file */
     public void fileSave(ActionEvent e){
-        // TODO
-        saveImage(e);
+        if(!activeIsDetectionPanel()) return;
+        getActiveDetectionPane().saveDetection();
     }
     
     /** exports source image */

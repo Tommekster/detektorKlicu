@@ -31,6 +31,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
+import javax.xml.bind.DatatypeConverter;
 
 /**
  *
@@ -92,6 +95,18 @@ public class LabelImage extends BufferedImage{
             ExceptionMessage e = new ExceptionMessage("errorLabelImageFileReading");
             e.setStackTrace(ex.getStackTrace());
             throw e;
+        }
+    }
+    
+    public static LabelImage fromBase64(String base64) throws ExceptionMessage {
+        byte [] byteArray = DatatypeConverter.parseBase64Binary(base64);
+        ByteArrayInputStream bais = new ByteArrayInputStream(byteArray);
+        try {
+            BufferedImage image = ImageIO.read(bais);
+            return LabelImage.createLabelImage(ImageProcessing.gray2RGB(image));
+        } catch (IOException ex) {
+            Logger.getLogger(LabelImage.class.getName()).log(Level.SEVERE, null, ex);
+            throw new ExceptionMessage("errorLabelImageFileReading",ex);
         }
     }
     
@@ -357,6 +372,12 @@ public class LabelImage extends BufferedImage{
         }catch(IOException e){
             throw new ExceptionMessage("exportOriginalImage", e);
         }
+    }
+    
+    public String base64() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(this, "png", baos);
+        return DatatypeConverter.printBase64Binary(baos.toByteArray());
     }
     
     protected final int [][] labels;
