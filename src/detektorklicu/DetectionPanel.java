@@ -23,6 +23,7 @@
  */
 package detektorklicu;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -80,9 +81,15 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
         regionsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                Region region = getSelectedRegion();
-                if(region == null) return;
-                canvas.displayRegions(region.getBoundingRectangle(),Color.green,null);
+                if(selectedRegion != null) {
+                    canvas.setShapeProperties(selectedRegion.getBoundingRectangle(),null,null);
+                    canvas.removeShape(selectedRegion.shapes.getEllipse2D());
+                }
+                
+                selectedRegion = getSelectedRegion();
+                if(selectedRegion == null) return;
+                canvas.setShapeProperties(selectedRegion.getBoundingRectangle(),Color.green,null);
+                canvas.addShape(selectedRegion.shapes.getEllipse2D(), Color.yellow, new BasicStroke(2));
                 canvas.repaint();
             }
         });
@@ -403,6 +410,7 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
     private Canvas canvas;
     private QueuedWorker worker = new QueuedWorker();
     private int zoomSize = -1;
+    private Region selectedRegion;
     
     class CanvasMouseListener extends MouseInputAdapter{
         Rectangle currentRect;

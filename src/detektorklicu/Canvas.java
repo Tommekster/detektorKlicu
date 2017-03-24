@@ -38,7 +38,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 /** Canvas panel
@@ -77,9 +76,24 @@ class Canvas extends JPanel{
     
     public void displayRegions(Polygon polygon, Color color, Stroke stroke){
         shapes.clear();
-        shapes.add(polygon);
-        if(color == null) shapesColor.remove(polygon); else shapesColor.put(polygon, color);
-        if(stroke == null) shapesStroke.remove(polygon); else shapesStroke.put(polygon, stroke);
+        addShape(polygon, color, stroke);
+    }
+    
+    public void addShape(Shape shape, Color color, Stroke stroke){
+        shapes.add(shape);
+        if(color == null) shapesColor.remove(shape); else shapesColor.put(shape, color);
+        if(stroke == null) shapesStroke.remove(shape); else shapesStroke.put(shape, stroke);
+    }
+    
+    public void setShapeProperties(Shape shape, Color color, Stroke stroke){
+        if(color == null) shapesColor.remove(shape); else shapesColor.put(shape, color);
+        if(stroke == null) shapesStroke.remove(shape); else shapesStroke.put(shape, stroke);
+    }
+    
+    public void removeShape(Shape shape){
+        shapes.remove(shape);
+        shapesColor.remove(shape);
+        shapesStroke.remove(shape);
     }
     
     public void displayRegions(List<Polygon> polygons){

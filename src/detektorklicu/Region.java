@@ -27,7 +27,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.concurrent.atomic.DoubleAdder;
 
 /**
@@ -45,6 +47,7 @@ public class Region {
     //private double sinTheta = 0, cosTheta = 0;
     private Polygon boundingRectangle;
     private final LabelImage parent;
+    Shapes shapes = new Shapes(); 
     
     public Region(LabelImage parent, int label, int area, Rectangle boundings, Point2D center){
         this(parent, label, area, boundings.x, boundings.y, boundings.x+boundings.width, boundings.y+boundings.height, center);
@@ -77,10 +80,7 @@ public class Region {
     }
     
     public double centralMoment(int p, int q){
-        //AtomicInteger sum = new AtomicInteger(0);
         DoubleAdder sum = new DoubleAdder();
-        //int label = this.getLabel();
-        //Point center = region.getCenter();
         double xc = center.getX();
         double yc = center.getY();
         ((Settings.getInstance().parallel)
@@ -153,6 +153,13 @@ public class Region {
     }
     
     class Shapes {
-        
+        Ellipse2D ellipse;
+        Ellipse2D getEllipse2D(){
+            if(this.ellipse != null) return this.ellipse;
+            Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 2*getHalfAxisA(), 2*getHalfAxisB());
+            
+            this.ellipse = ellipse;
+            return this.ellipse;
+        }
     }
 }
