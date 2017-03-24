@@ -84,12 +84,14 @@ public class DetectionPanel extends javax.swing.JPanel implements MainWindow.Clo
                 if(selectedRegion != null) {
                     canvas.setShapeProperties(selectedRegion.getBoundingRectangle(),null,null);
                     canvas.removeShape(selectedRegion.shapes.getEllipse2D());
+                    canvas.removeShape(selectedRegion.shapes.getAxes());
                 }
                 
                 selectedRegion = getSelectedRegion();
                 if(selectedRegion == null) return;
                 canvas.setShapeProperties(selectedRegion.getBoundingRectangle(),Color.green,null);
                 canvas.addShape(selectedRegion.shapes.getEllipse2D(), Color.yellow, new BasicStroke(2));
+                canvas.addShape(selectedRegion.shapes.getAxes(), Color.blue, new BasicStroke(2));
                 canvas.repaint();
             }
         });

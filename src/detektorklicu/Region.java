@@ -27,7 +27,10 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.concurrent.atomic.DoubleAdder;
@@ -153,13 +156,30 @@ public class Region {
     }
     
     class Shapes {
-        Ellipse2D ellipse;
-        Ellipse2D getEllipse2D(){
+        private AffineTransform getTransform(){
+            AffineTransform xform = AffineTransform.getTranslateInstance(center.getX(),center.getY());
+            xform.rotate(getOrientation());
+            return xform;
+        }
+        
+        Shape ellipse;
+        Shape getEllipse2D(){
             if(this.ellipse != null) return this.ellipse;
-            Ellipse2D ellipse = new Ellipse2D.Double(0, 0, 2*getHalfAxisA(), 2*getHalfAxisB());
-            
-            this.ellipse = ellipse;
+            Ellipse2D ellipse = new Ellipse2D.Double(-getHalfAxisA(), -getHalfAxisB(), 2*getHalfAxisA(), 2*getHalfAxisB());
+            this.ellipse = getTransform().createTransformedShape(ellipse);
+            //this.ellipse = ellipse;
             return this.ellipse;
+        }
+        
+        Shape axes;
+        Shape getAxes(){
+            if(this.axes != null) return this.axes;
+            Path2D axes = new Path2D.Float();
+            axes.moveTo(-getHalfAxisA(), 0);
+            axes.lineTo(0, 0);
+            axes.lineTo(0, getHalfAxisB());
+            this.axes = getTransform().createTransformedShape(axes);
+            return this.axes;
         }
     }
 }
